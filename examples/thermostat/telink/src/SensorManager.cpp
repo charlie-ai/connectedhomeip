@@ -102,11 +102,12 @@ void SensorManager::SensorTimerEventHandler(AppEvent * aEvent)
     ret = sSht30Manager.hw_sht30_humi_get(&humiValue);
     LOG_INF("hw_sht30_humi_get ret: %d", ret);
 
-    LOG_INF("Sensor Temp is : %d", tempValue.val1);
+    LOG_INF("Sensor Temp is : %d.%d", tempValue.val1, tempValue.val2);
 
     LOG_INF("SHT3XD: %.2f Cel ; %0.2f %%RH\n", sensor_value_to_double(&tempValue), sensor_value_to_double(&humiValue));
 
-    int16_t temp_set = static_cast<int16_t>(tempValue.val1);
+    int16_t temp_set = static_cast<int16_t>(tempValue.val1) * 100 + static_cast<int16_t>(tempValue.val2 / 10000);
+    LOG_INF("temp_set is : %d", temp_set);
 
     PlatformMgr().LockChipStack();
     app::Clusters::Thermostat::Attributes::LocalTemperature::Set(kThermostatEndpoint, temp_set);
