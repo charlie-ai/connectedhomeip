@@ -19,6 +19,7 @@
 #include "SensorManager.h"
 #include "AppConfig.h"
 #include "AppTask.h"
+#include "HwSht3xd.h"
 
 LOG_MODULE_DECLARE(app, CONFIG_CHIP_APP_LOG_LEVEL);
 
@@ -26,10 +27,12 @@ using namespace chip;
 using namespace ::chip::DeviceLayer;
 
 constexpr EndpointId kThermostatEndpoint = 1;
-constexpr uint16_t kSensorTimerPeriodMs  = 30000; // 30s timer period
+constexpr uint16_t kSensorTimerPeriodMs  = 10000; // 30s timer period
 constexpr uint16_t kMinTemperatureDelta  = 50;    // 0.5 degree Celsius
 
 k_timer sSensorTimer;
+
+HwSht3xd sSht30Manager;
 
 SensorManager SensorManager::sSensorManager;
 
@@ -42,6 +45,9 @@ CHIP_ERROR SensorManager::Init()
     k_timer_init(&sSensorTimer, &TimerEventHandler, nullptr);
     k_timer_user_data_set(&sSensorTimer, this);
     k_timer_start(&sSensorTimer, K_MSEC(kSensorTimerPeriodMs), K_NO_WAIT);
+
+    unsigned int ret = sSht30Manager.hw_sht30_init();
+    LOG_INF("hw_sht30_init ret: %d", ret);
 
     return CHIP_NO_ERROR;
 }
@@ -57,6 +63,7 @@ void SensorManager::TimerEventHandler(k_timer * timer)
 
 void SensorManager::SensorTimerEventHandler(AppEvent * aEvent)
 {
+#if 0
     int16_t temperature            = 0;
     static int16_t lastTemperature = 0;
 
@@ -84,6 +91,27 @@ void SensorManager::SensorTimerEventHandler(AppEvent * aEvent)
         app::Clusters::Thermostat::Attributes::LocalTemperature::Set(kThermostatEndpoint, temperature);
         PlatformMgr().UnlockChipStack();
     }
+#else
+    struct sensor_value tempValue;
+    struct sensor_value humiValue;
+    unsigned int ret = 0;
+    ret              = sSht30Manager.hw_sht30_sample_fetch();
+    LOG_INF("hw_sht30_sample_fetch ret: %d", ret);
+    ret = sSht30Manager.hw_sht30_temp_get(&tempValue);
+    LOG_INF("hw_sht30_temp_get ret: %d", ret);
+    ret = sSht30Manager.hw_sht30_humi_get(&humiValue);
+    LOG_INF("hw_sht30_humi_get ret: %d", ret);
+
+    LOG_INF("Sensor Temp is : %d", tempValue.val1);
+
+    LOG_INF("SHT3XD: %.2f Cel ; %0.2f %%RH\n", sensor_value_to_double(&tempValue), sensor_value_to_double(&humiValue));
+
+    int16_t temp_set = static_cast<int16_t>(tempValue.val1);
+
+    PlatformMgr().LockChipStack();
+    app::Clusters::Thermostat::Attributes::LocalTemperature::Set(kThermostatEndpoint, temp_set);
+    PlatformMgr().UnlockChipStack();
+#endif
 
     // Start next timer to handle temp sensor.
     k_timer_start(&sSensorTimer, K_MSEC(kSensorTimerPeriodMs), K_NO_WAIT);

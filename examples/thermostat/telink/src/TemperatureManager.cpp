@@ -61,7 +61,7 @@ int8_t TemperatureManager::ConvertToPrintableTemp(int16_t temperature)
 
     // Round up the temperature as we won't print decimals on LCD
     // Is it a negative temperature
-    if (temperature < 0)
+    if (temperature > kRoundUpValue)
     {
         temperature -= kRoundUpValue;
     }

@@ -68,6 +68,7 @@ add_definitions(
 target_sources(app PRIVATE
                src/AppTask.cpp
                src/SensorManager.cpp
+               src/HwSht3xd.cpp
                src/TemperatureManager.cpp
                src/ZclCallbacks.cpp
                ${TELINK_COMMON}/common/src/mainCommon.cpp

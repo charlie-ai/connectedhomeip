@@ -78,6 +78,14 @@
 	pinctrl-0 = <&pwm_ch0_pb4_default &pwm_ch1_pb5_default &pwm_ch2_pe2_default &pwm_ch3_pe0_default>;
 };
 
+&i2c { /* SCL(PE1), SDA(PE3), ALERT (PE4) */
+	sht3xd@44 {
+		compatible = "sensirion,sht3xd";
+		reg = <0x44>;
+		alert-gpios = <&gpioe 5 GPIO_ACTIVE_HIGH>;
+	};
+};
+
 &flash {
 	reg = <0x20000000 0x200000>;
 
