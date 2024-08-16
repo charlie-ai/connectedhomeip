@@ -37,10 +37,14 @@ class PwmManager
 public:
     enum EAppPwm
     {
-        EAppPwm_Indication = 0,
-        EAppPwm_Red,
+
+        EAppPwm_Red = 0,
         EAppPwm_Green,
         EAppPwm_Blue,
+        EAppPwm_Yellow,
+        EAppPwm_White,
+
+        EAppPwm_Indication,
     };
 
     static PwmManager & getInstance();
@@ -127,7 +131,7 @@ public:
     void operator=(Ws2812Strip const &) = delete;
 
 private:
-    Ws2812Strip(){};
+    Ws2812Strip() {};
 };
 
 #else
@@ -147,7 +151,7 @@ public:
     void operator=(PwmPool const &) = delete;
 
 private:
-    PwmPool(){};
+    PwmPool() {};
 };
 
 #endif // CONFIG_WS2812_STRIP

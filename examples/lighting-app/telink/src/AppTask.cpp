@@ -133,6 +133,9 @@ void AppTask::SetInitiateAction(Fixture_Action aAction, int32_t aActor, uint8_t 
             PwmManager::getInstance().setPwm(PwmManager::EAppPwm_Red, (((uint32_t) sLedRgb.r * 1000) / UINT8_MAX));
             PwmManager::getInstance().setPwm(PwmManager::EAppPwm_Green, (((uint32_t) sLedRgb.g * 1000) / UINT8_MAX));
             PwmManager::getInstance().setPwm(PwmManager::EAppPwm_Blue, (((uint32_t) sLedRgb.b * 1000) / UINT8_MAX));
+            PwmManager::getInstance().setPwm(PwmManager::EAppPwm_Yellow, (((uint32_t) sLedRgb.b * 1000) / UINT8_MAX));
+            PwmManager::getInstance().setPwm(PwmManager::EAppPwm_White, (((uint32_t) sLedRgb.b * 1000) / UINT8_MAX));
+            PwmManager::getInstance().setPwm(PwmManager::EAppPwm_Indication, (((uint32_t) sLedRgb.b * 1000) / UINT8_MAX));
         }
         else
         {
@@ -140,6 +143,9 @@ void AppTask::SetInitiateAction(Fixture_Action aAction, int32_t aActor, uint8_t 
             PwmManager::getInstance().setPwm(PwmManager::EAppPwm_Red, false);
             PwmManager::getInstance().setPwm(PwmManager::EAppPwm_Green, false);
             PwmManager::getInstance().setPwm(PwmManager::EAppPwm_Blue, false);
+            PwmManager::getInstance().setPwm(PwmManager::EAppPwm_Yellow, false);
+            PwmManager::getInstance().setPwm(PwmManager::EAppPwm_White, false);
+            PwmManager::getInstance().setPwm(PwmManager::EAppPwm_Indication, false);
         }
     }
     else if (aAction == LEVEL_ACTION)
@@ -200,6 +206,9 @@ void AppTask::SetInitiateAction(Fixture_Action aAction, int32_t aActor, uint8_t 
         PwmManager::getInstance().setPwm(PwmManager::EAppPwm_Red, (((uint32_t) sLedRgb.r * 1000) / UINT8_MAX));
         PwmManager::getInstance().setPwm(PwmManager::EAppPwm_Green, (((uint32_t) sLedRgb.g * 1000) / UINT8_MAX));
         PwmManager::getInstance().setPwm(PwmManager::EAppPwm_Blue, (((uint32_t) sLedRgb.b * 1000) / UINT8_MAX));
+        PwmManager::getInstance().setPwm(PwmManager::EAppPwm_Yellow, (((uint32_t) sLedRgb.b * 1000) / UINT8_MAX));
+        PwmManager::getInstance().setPwm(PwmManager::EAppPwm_White, (((uint32_t) sLedRgb.b * 1000) / UINT8_MAX));
+        PwmManager::getInstance().setPwm(PwmManager::EAppPwm_Indication, (((uint32_t) sLedRgb.b * 1000) / UINT8_MAX));
     }
 }
 

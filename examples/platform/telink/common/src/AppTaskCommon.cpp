@@ -420,10 +420,13 @@ void AppTaskCommon::LinkPwms(PwmManager & pwmManager)
     pwmManager.linkPwm(PwmManager::EAppPwm_Green, 1);
     pwmManager.linkPwm(PwmManager::EAppPwm_Blue, 2);
 #else
-    pwmManager.linkPwm(PwmManager::EAppPwm_Indication, 0);
-    pwmManager.linkPwm(PwmManager::EAppPwm_Red, 1);
-    pwmManager.linkPwm(PwmManager::EAppPwm_Green, 2);
-    pwmManager.linkPwm(PwmManager::EAppPwm_Blue, 3);
+    // pwmManager.linkPwm(PwmManager::EAppPwm_Indication, 0);
+    pwmManager.linkPwm(PwmManager::EAppPwm_Red, 0);
+    pwmManager.linkPwm(PwmManager::EAppPwm_Green, 1);
+    pwmManager.linkPwm(PwmManager::EAppPwm_Blue, 2);
+    pwmManager.linkPwm(PwmManager::EAppPwm_Yellow, 3);
+    pwmManager.linkPwm(PwmManager::EAppPwm_White, 4);
+    pwmManager.linkPwm(PwmManager::EAppPwm_Indication, 5);
 #endif // CONFIG_WS2812_STRIP
 }
 
