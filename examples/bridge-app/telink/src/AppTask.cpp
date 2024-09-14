@@ -53,6 +53,8 @@ void emberAfActionsClusterInitCallback(chip::EndpointId endpoint)
 AppTask AppTask::sAppTask;
 #include <app/InteractionModelEngine.h>
 
+#define debug_msg(a, ...) printk("[ D ] %d %s(): " a, __LINE__, __func__, ##__VA_ARGS__)
+
 int AddDeviceEndpoint(Device * dev, EmberAfEndpointType * ep, const Span<const EmberAfDeviceType> & deviceTypeList,
                       const Span<DataVersion> & dataVersionStorage, chip::EndpointId parentEndpointId);
 CHIP_ERROR RemoveDeviceEndpoint(Device * dev);
@@ -84,6 +86,7 @@ static DeviceTempSensor TempSensor1("TempSensor 1", "Office", minMeasuredValue, 
 #define DEVICE_TYPE_BRIDGED_NODE 0x0013
 // (taken from lo-devices.xml)
 #define DEVICE_TYPE_LO_ON_OFF_LIGHT 0x0100
+#define DEVICE_TYPE_DIMMALBE_LIGHT 0x0101
 #define DEVICE_TYPE_ROOT_NODE 0x0016
 #define DEVICE_TYPE_BRIDGE 0x000e
 #define DEVICE_TYPE_TEMP_SENSOR 0x0302
@@ -97,6 +100,8 @@ static DeviceTempSensor TempSensor1("TempSensor 1", "Office", minMeasuredValue, 
 #define ZCL_BRIDGED_DEVICE_BASIC_INFORMATION_CLUSTER_REVISION (2u)
 #define ZCL_FIXED_LABEL_CLUSTER_REVISION (1u)
 #define ZCL_ON_OFF_CLUSTER_REVISION (4u)
+#define ZCL_LEVEL_CONTROL_CLUSTER_REVISION (6u)
+#define ZCL_COLOR_CONTROL_CLUSTER_REVISION (7u)
 #define ZCL_TEMPERATURE_SENSOR_CLUSTER_REVISION (4u)
 #define ZCL_BRIDGED_DEVICE_BASIC_INFORMATION_FEATURE_MAP (0u)
 #define ZCL_TEMPERATURE_SENSOR_FEATURE_MAP (0u)
@@ -111,6 +116,53 @@ static DeviceTempSensor TempSensor1("TempSensor 1", "Office", minMeasuredValue, 
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(onOffAttrs)
 DECLARE_DYNAMIC_ATTRIBUTE(Clusters::OnOff::Attributes::OnOff::Id, BOOLEAN, 1, 0), /* on/off */
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::OnOff::Attributes::ClusterRevision::Id, INT16U, ZCL_ON_OFF_CLUSTER_REVISION, 0),
+    DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
+
+// Declare level control cluster attributes
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(levelControlAttrs)
+DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::CurrentLevel::Id, INT8U, 1, 0), /* CurrentLevel */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::RemainingTime::Id, INT16U, 1, 0),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::MinLevel::Id, INT8U, 1, 0),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::MaxLevel::Id, INT8U, 1, 0),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::Options::Id, BITMAP8, 1, 0),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::OnOffTransitionTime::Id, INT16U, 1, 0),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::OnLevel::Id, INT8U, 1, 0),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::OnTransitionTime::Id, INT16U, 1, 0),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::OffTransitionTime::Id, INT16U, 1, 0),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::StartUpCurrentLevel::Id, INT8U, 1, 0),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::DefaultMoveRate::Id, INT8U, 1, 0), /* DefaultMoveRate */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::ClusterRevision::Id, INT16U, ZCL_LEVEL_CONTROL_CLUSTER_REVISION,
+                              0),
+    DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
+
+// Declare color control cluster attributes
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(colorControlAttrs)
+DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::CurrentHue::Id, INT8U, 1, 0),            /* CurrentHue */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::CurrentSaturation::Id, INT8U, 1, 0), /* CurrentSaturation */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::RemainingTime::Id, INT16U, 1, 0),    /* RemainingTime */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::CurrentX::Id, INT16U, 1, 0),         /* CurrentX */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::CurrentY::Id, INT16U, 1, 0),         /* CurrentY */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorTemperatureMireds::Id, INT16U, 1,
+                              0),                                                                      /* ColorTemperatureMireds */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorMode::Id, INT8U, 1, 0),         /* ColorMode */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::Options::Id, INT8U, 1, 0),           /* Options */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::NumberOfPrimaries::Id, INT8U, 1, 0), /* NumberOfPrimaries */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::EnhancedCurrentHue::Id, INT16U, 1, 0), /* EnhancedCurrentHue */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::EnhancedColorMode::Id, INT8U, 1, 0),   /* EnhancedColorMode */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorLoopActive::Id, INT8U, 1, 0),     /* ColorLoopActive */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorLoopDirection::Id, INT8U, 1, 0),  /* ColorLoopDirection */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorLoopTime::Id, INT16U, 1, 0),      /* ColorLoopTime */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorLoopStartEnhancedHue::Id, INT16U, 1,
+                              0), /* ColorLoopStartEnhancedHue */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorLoopStoredEnhancedHue::Id, INT16U, 1,
+                              0), /* ColorLoopStoredEnhancedHue */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorCapabilities::Id, INT8U, 1, 0), /* ColorCapabilities */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorTempPhysicalMinMireds::Id, INT16U, 1,
+                              0), /* ColorTempPhysicalMinMireds */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorTempPhysicalMaxMireds::Id, INT16U, 1,
+                              0), /* ColorTempPhysicalMaxMireds */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ClusterRevision::Id, INT16U, ZCL_COLOR_CONTROL_CLUSTER_REVISION,
+                              0),
     DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 // Declare Descriptor cluster attributes
@@ -150,11 +202,44 @@ constexpr CommandId onOffIncomingCommands[] = {
     kInvalidCommandId,
 };
 
+constexpr CommandId levelControlIncomingCommands[] = {
+    app::Clusters::LevelControl::Commands::MoveToLevel::Id,
+    app::Clusters::LevelControl::Commands::Move::Id,
+    app::Clusters::LevelControl::Commands::Step::Id,
+    app::Clusters::LevelControl::Commands::Stop::Id,
+    app::Clusters::LevelControl::Commands::MoveToLevelWithOnOff::Id,
+    app::Clusters::LevelControl::Commands::MoveWithOnOff::Id,
+    app::Clusters::LevelControl::Commands::StepWithOnOff::Id,
+    app::Clusters::LevelControl::Commands::StopWithOnOff::Id,
+    kInvalidCommandId,
+};
+
+constexpr CommandId colorControlIncomingCommands[] = {
+    app::Clusters::ColorControl::Commands::MoveToHue::Id,
+    app::Clusters::ColorControl::Commands::MoveHue::Id,
+    app::Clusters::ColorControl::Commands::StepHue::Id,
+    app::Clusters::ColorControl::Commands::MoveToSaturation::Id,
+    app::Clusters::ColorControl::Commands::MoveSaturation::Id,
+    app::Clusters::ColorControl::Commands::StepSaturation::Id,
+    app::Clusters::ColorControl::Commands::MoveToHueAndSaturation::Id,
+    app::Clusters::ColorControl::Commands::MoveToColor::Id,
+    app::Clusters::ColorControl::Commands::MoveColor::Id,
+    app::Clusters::ColorControl::Commands::StepColor::Id,
+    app::Clusters::ColorControl::Commands::MoveToColorTemperature::Id,
+    app::Clusters::ColorControl::Commands::EnhancedMoveToHue::Id,
+    kInvalidCommandId,
+};
+
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedLightClusters)
 DECLARE_DYNAMIC_CLUSTER(Clusters::OnOff::Id, onOffAttrs, ZAP_CLUSTER_MASK(SERVER), onOffIncomingCommands, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(Clusters::LevelControl::Id, levelControlAttrs, ZAP_CLUSTER_MASK(SERVER), levelControlIncomingCommands,
+                            nullptr),
+    DECLARE_DYNAMIC_CLUSTER(Clusters::ColorControl::Id, colorControlAttrs, ZAP_CLUSTER_MASK(SERVER), colorControlIncomingCommands,
+                            nullptr),
     DECLARE_DYNAMIC_CLUSTER(Clusters::Descriptor::Id, descriptorAttrs, ZAP_CLUSTER_MASK(SERVER), nullptr, nullptr),
     DECLARE_DYNAMIC_CLUSTER(chip::app::Clusters::BridgedDeviceBasicInformation::Id, bridgedDeviceBasicAttrs,
-                            ZAP_CLUSTER_MASK(SERVER), nullptr, nullptr) DECLARE_DYNAMIC_CLUSTER_LIST_END;
+                            ZAP_CLUSTER_MASK(SERVER), nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER_LIST_END;
 
 // ----------------------------Temperature sensor-----------------------------------------------
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(tempSensorAttrs)
@@ -195,8 +280,8 @@ DataVersion gLight4DataVersions[MATTER_ARRAY_SIZE(bridgedLightClusters)];
 const EmberAfDeviceType gRootDeviceTypes[]          = { { DEVICE_TYPE_ROOT_NODE, DEVICE_VERSION_DEFAULT } };
 const EmberAfDeviceType gAggregateNodeDeviceTypes[] = { { DEVICE_TYPE_BRIDGE, DEVICE_VERSION_DEFAULT } };
 
-const EmberAfDeviceType gBridgedOnOffDeviceTypes[] = { { DEVICE_TYPE_LO_ON_OFF_LIGHT, DEVICE_VERSION_DEFAULT },
-                                                       { DEVICE_TYPE_BRIDGED_NODE, DEVICE_VERSION_DEFAULT } };
+const EmberAfDeviceType gBridgedDimmableLightDeviceTypes[] = { { DEVICE_TYPE_DIMMALBE_LIGHT, DEVICE_VERSION_DEFAULT },
+                                                               { DEVICE_TYPE_BRIDGED_NODE, DEVICE_VERSION_DEFAULT } };
 
 const EmberAfDeviceType gBridgedTempSensorDeviceTypes[] = { { DEVICE_TYPE_TEMP_SENSOR, DEVICE_VERSION_DEFAULT },
                                                             { DEVICE_TYPE_BRIDGED_NODE, DEVICE_VERSION_DEFAULT } };
@@ -322,6 +407,305 @@ Protocols::InteractionModel::Status HandleWriteOnOffAttribute(Device * dev, chip
     return Protocols::InteractionModel::Status::Success;
 }
 
+Protocols::InteractionModel::Status HandleReadLevelControlAttribute(Device * dev, chip::AttributeId attributeId, uint8_t * buffer,
+                                                                    uint16_t maxReadLength)
+{
+    using namespace Clusters::LevelControl::Attributes;
+    ChipLogProgress(DeviceLayer, "HandleReadLevelControlAttribute: attrId=%" PRIu32 ", maxReadLength=%u", attributeId,
+                    maxReadLength);
+
+    if ((attributeId == CurrentLevel::Id) /* && (maxReadLength == 1)*/)
+    {
+        // *buffer = dev->GetLevel();
+        uint8_t currentLevelValue = dev->GetLevel();
+        debug_msg("currentLevelValue=[%u]\n", currentLevelValue);
+        memcpy(buffer, &currentLevelValue, sizeof(currentLevelValue));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == RemainingTime::Id) /* && (maxReadLength == 4)*/)
+    {
+        debug_msg("RemainingTime\n");
+        uint16_t remainingTime = 0;
+        memcpy(buffer, &remainingTime, sizeof(remainingTime));
+    }
+    else if ((attributeId == MinLevel::Id) /* && (maxReadLength == 2)*/)
+    {
+        debug_msg("MinLevel\n");
+        uint8_t MinLevel = 0;
+        memcpy(buffer, &MinLevel, sizeof(MinLevel));
+    }
+    else if ((attributeId == MaxLevel::Id) /* && (maxReadLength == 2)*/)
+    {
+        debug_msg("MaxLevel\n");
+        uint8_t MaxLevel = 254;
+        memcpy(buffer, &MaxLevel, sizeof(MaxLevel));
+    }
+    else if ((attributeId == OnOffTransitionTime::Id) /* && (maxReadLength == 1)*/)
+    {
+        debug_msg("OnOffTransitionTime\n");
+        uint8_t OnOffTransitionTime = 0;
+        memcpy(buffer, &OnOffTransitionTime, sizeof(OnOffTransitionTime));
+    }
+    else if ((attributeId == OnLevel::Id) /* && (maxReadLength == 2)*/)
+    {
+        debug_msg("OnLevel\n");
+        uint8_t OnLevel = 0;
+        memcpy(buffer, &OnLevel, sizeof(OnLevel));
+    }
+    else if ((attributeId == OnTransitionTime::Id) /* && (maxReadLength == 1)*/)
+    {
+        debug_msg("OnTransitionTime\n");
+        uint8_t OnTransitionTime = 0;
+        memcpy(buffer, &OnTransitionTime, sizeof(OnTransitionTime));
+    }
+    else if ((attributeId == OffTransitionTime::Id) /* && (maxReadLength == 1)*/)
+    {
+        debug_msg("OffTransitionTime\n");
+        uint8_t OffTransitionTime = 0;
+        memcpy(buffer, &OffTransitionTime, sizeof(OffTransitionTime));
+    }
+    else if ((attributeId == StartUpCurrentLevel::Id) /* && (maxReadLength == 1)*/)
+    {
+        debug_msg("StartUpCurrentLevel\n");
+        uint8_t StartUpCurrentLevel = 255;
+        memcpy(buffer, &StartUpCurrentLevel, sizeof(StartUpCurrentLevel));
+    }
+    else if ((attributeId == Options::Id) /* && (maxReadLength == 1)*/)
+    {
+        debug_msg("Options\n");
+        uint8_t Options = 1;
+        memcpy(buffer, &Options, sizeof(Options));
+    }
+    else if ((attributeId == DefaultMoveRate::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint8_t defaultMoveRate = dev->GetDefaultMoveRate();
+        debug_msg("DefaultMoveRate::Id=[%u]\n", defaultMoveRate);
+        memcpy(buffer, &defaultMoveRate, sizeof(defaultMoveRate));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == ClusterRevision::Id) && (maxReadLength == 4))
+    {
+        debug_msg("ClusterRevision\n");
+        uint16_t clusterRevision = ZCL_LEVEL_CONTROL_CLUSTER_REVISION;
+        memcpy(buffer, &clusterRevision, sizeof(clusterRevision));
+    }
+    else
+    {
+        debug_msg("EMBER_ZCL_STATUS_FAILURE \n");
+        return Protocols::InteractionModel::Status::Failure;
+    }
+    debug_msg("EMBER_ZCL_STATUS_SUCCESS \n");
+    return Protocols::InteractionModel::Status::Success;
+}
+
+Protocols::InteractionModel::Status HandleWriteLevelControlAttribute(Device * dev, chip::AttributeId attributeId, uint8_t * buffer)
+{
+    debug_msg("HandleWriteLevelControlAttribute: attrId=%d", attributeId);
+
+    if (dev->IsReachable())
+    {
+        if (attributeId == Clusters::LevelControl::Attributes::CurrentLevel::Id)
+        {
+            debug_msg("CurrentLevel\n");
+            dev->SetLevel(*buffer);
+            return Protocols::InteractionModel::Status::Success;
+        }
+        else if (attributeId == Clusters::LevelControl::Attributes::DefaultMoveRate::Id)
+        {
+            debug_msg("DefaultMoveRate\n");
+            dev->SetDefaultMoveRate(*buffer);
+            return Protocols::InteractionModel::Status::Success;
+        }
+    }
+
+    debug_msg("EMBER_ZCL_STATUS_FAILURE \n");
+    return Protocols::InteractionModel::Status::Failure;
+    // ReturnErrorCodeIf((attributeId != Clusters::LevelControl::Attributes::CurrentLevel::Id) || (!dev->IsReachable()),
+    // EMBER_ZCL_STATUS_FAILURE); dev->SetLevel(*buffer); debug_msg("buffer[%d]\n", *buffer); return EMBER_ZCL_STATUS_SUCCESS;
+}
+
+Protocols::InteractionModel::Status HandleReadColorControlAttribute(Device * dev, chip::AttributeId attributeId, uint8_t * buffer,
+                                                                    uint16_t maxReadLength)
+{
+    using namespace Clusters::ColorControl::Attributes;
+    ChipLogProgress(DeviceLayer, "HandleReadColorControlAttribute: attrId=%" PRIu32 ", maxReadLength=%u", attributeId,
+                    maxReadLength);
+
+    if ((attributeId == CurrentHue::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint8_t currentHue = dev->GetCurrentHue();
+        debug_msg("CurrentHue::Id=[%u]\n", currentHue);
+        memcpy(buffer, &currentHue, sizeof(currentHue));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == CurrentSaturation::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint8_t currentSaturation = dev->GetCurrentSaturation();
+        debug_msg("SurrentSaturation::Id=[%u]\n", currentSaturation);
+        memcpy(buffer, &currentSaturation, sizeof(currentSaturation));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == RemainingTime::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint16_t remainingTime = 0;
+        debug_msg("RemainingTime::Id=[%u]\n", remainingTime);
+        memcpy(buffer, &remainingTime, sizeof(remainingTime));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == CurrentX::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint16_t currentX = 0x616b;
+        debug_msg("CurrentX::Id=[%u]\n", currentX);
+        memcpy(buffer, &currentX, sizeof(currentX));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == CurrentY::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint16_t currentY = 0x607D;
+        debug_msg("CurrentY::Id=[%u]\n", currentY);
+        memcpy(buffer, &currentY, sizeof(currentY));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == ColorTemperatureMireds::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint16_t colorTemperatureMireds = 0x00fa;
+        debug_msg("ColorTemperatureMireds::Id=[%u]\n", colorTemperatureMireds);
+        memcpy(buffer, &colorTemperatureMireds, sizeof(colorTemperatureMireds));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == ColorMode::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint16_t colorMode = 0x01;
+        debug_msg("ColorMode::Id=[%u]\n", colorMode);
+        memcpy(buffer, &colorMode, sizeof(colorMode));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == Options::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint16_t options = 0;
+        debug_msg("Options::Id=[%u]\n", options);
+        memcpy(buffer, &options, sizeof(options));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == NumberOfPrimaries::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint8_t numberOfPrimaries = 0;
+        debug_msg("NumberOfPrimaries::Id=[%u]\n", numberOfPrimaries);
+        memcpy(buffer, &numberOfPrimaries, sizeof(numberOfPrimaries));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == EnhancedCurrentHue::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint16_t enhancedCurrentHue = 0x00;
+        debug_msg("EnhancedCurrentHue::Id=[%u]\n", enhancedCurrentHue);
+        memcpy(buffer, &enhancedCurrentHue, sizeof(enhancedCurrentHue));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == EnhancedColorMode::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint16_t enhancedColorMode = 0x01;
+        debug_msg("EnhancedColorMode::Id=[%u]\n", enhancedColorMode);
+        memcpy(buffer, &enhancedColorMode, sizeof(enhancedColorMode));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == ColorLoopActive::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint8_t colorLoopActive = 0x00;
+        debug_msg("ColorLoopActive::Id=[%u]\n", colorLoopActive);
+        memcpy(buffer, &colorLoopActive, sizeof(colorLoopActive));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == ColorLoopDirection::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint8_t colorLoopDirection = 0x00;
+        debug_msg("ColorLoopDirection::Id=[%u]\n", colorLoopDirection);
+        memcpy(buffer, &colorLoopDirection, sizeof(colorLoopDirection));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == ColorLoopTime::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint16_t colorLoopTime = 0x0019;
+        debug_msg("ColorLoopTime::Id=[%u]\n", colorLoopTime);
+        memcpy(buffer, &colorLoopTime, sizeof(colorLoopTime));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == ColorLoopStartEnhancedHue::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint16_t colorLoopStartEnhancedHue = 0x2300;
+        debug_msg("ColorLoopStartEnhancedHue::Id=[%u]\n", colorLoopStartEnhancedHue);
+        memcpy(buffer, &colorLoopStartEnhancedHue, sizeof(colorLoopStartEnhancedHue));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == ColorLoopStoredEnhancedHue::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint16_t colorLoopStoredEnhancedHue = 0x00;
+        debug_msg("ColorLoopStoredEnhancedHue::Id=[%u]\n", colorLoopStoredEnhancedHue);
+        memcpy(buffer, &colorLoopStoredEnhancedHue, sizeof(colorLoopStoredEnhancedHue));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == ColorCapabilities::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint8_t colorCapabilities = 0x1f;
+        debug_msg("ColorCapabilities::Id=[%u]\n", colorCapabilities);
+        memcpy(buffer, &colorCapabilities, sizeof(colorCapabilities));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == ColorTempPhysicalMinMireds::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint16_t colorTempPhysicalMinMireds = 0x009a;
+        debug_msg("ColorTempPhysicalMinMireds::Id=[%u]\n", colorTempPhysicalMinMireds);
+        memcpy(buffer, &colorTempPhysicalMinMireds, sizeof(colorTempPhysicalMinMireds));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == ColorTempPhysicalMaxMireds::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint16_t colorTempPhysicalMaxMireds = 0x01c6;
+        debug_msg("ColorTempPhysicalMaxMireds::Id=[%u]\n", colorTempPhysicalMaxMireds);
+        memcpy(buffer, &colorTempPhysicalMaxMireds, sizeof(colorTempPhysicalMaxMireds));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == ClusterRevision::Id) /* && (maxReadLength == 1)*/)
+    {
+        uint16_t clusterRevision = ZCL_COLOR_CONTROL_CLUSTER_REVISION;
+        debug_msg("ClusterRevision::Id=[%u]\n", clusterRevision);
+        memcpy(buffer, &clusterRevision, sizeof(clusterRevision));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else
+    {
+        debug_msg("EMBER_ZCL_STATUS_FAILURE \n");
+        return Protocols::InteractionModel::Status::Failure;
+    }
+    debug_msg("EMBER_ZCL_STATUS_SUCCESS \n");
+
+    return Protocols::InteractionModel::Status::Success;
+}
+
+Protocols::InteractionModel::Status HandleWriteColorControlAttribute(Device * dev, chip::AttributeId attributeId, uint8_t * buffer)
+{
+    using namespace Clusters::ColorControl::Attributes;
+    debug_msg("HandleWriteColorControlAttribute: attrId=%d", attributeId);
+
+    if (dev->IsReachable())
+    {
+        if (attributeId == CurrentHue::Id)
+        {
+            debug_msg("CurrentHue\n");
+            dev->SetCurrentHue(*buffer);
+            return Protocols::InteractionModel::Status::Success;
+        }
+        else if (attributeId == CurrentSaturation::Id)
+        {
+            debug_msg("CurrentSaturation\n");
+            dev->SetCurrentSaturation(*buffer);
+            return Protocols::InteractionModel::Status::Success;
+        }
+    }
+
+    debug_msg("EMBER_ZCL_STATUS_FAILURE \n");
+    return Protocols::InteractionModel::Status::Failure;
+}
+
 Protocols::InteractionModel::Status emberAfExternalAttributeReadCallback(EndpointId endpoint, ClusterId clusterId,
                                                                          const EmberAfAttributeMetadata * attributeMetadata,
                                                                          uint8_t * buffer, uint16_t maxReadLength)
@@ -347,6 +731,14 @@ Protocols::InteractionModel::Status emberAfExternalAttributeReadCallback(Endpoin
             return HandleReadTempMeasurementAttribute(static_cast<DeviceTempSensor *>(dev), attributeMetadata->attributeId, buffer,
                                                       maxReadLength);
         }
+        else if (clusterId == LevelControl::Id)
+        {
+            return HandleReadLevelControlAttribute(dev, attributeMetadata->attributeId, buffer, maxReadLength);
+        }
+        else if (clusterId == ColorControl::Id)
+        {
+            return HandleReadColorControlAttribute(dev, attributeMetadata->attributeId, buffer, maxReadLength);
+        }
     }
 
     return Protocols::InteractionModel::Status::Failure;
@@ -362,9 +754,20 @@ Protocols::InteractionModel::Status emberAfExternalAttributeWriteCallback(Endpoi
     {
         Device * dev = gDevices[endpointIndex];
 
-        if ((dev->IsReachable()) && (clusterId == Clusters::OnOff::Id))
+        if (dev->IsReachable())
         {
-            return HandleWriteOnOffAttribute(dev, attributeMetadata->attributeId, buffer);
+            if (clusterId == Clusters::OnOff::Id)
+            {
+                return HandleWriteOnOffAttribute(dev, attributeMetadata->attributeId, buffer);
+            }
+            else if (clusterId == Clusters::LevelControl::Id)
+            {
+                return HandleWriteLevelControlAttribute(dev, attributeMetadata->attributeId, buffer);
+            }
+            else if (clusterId == Clusters::ColorControl::Id)
+            {
+                return HandleWriteColorControlAttribute(dev, attributeMetadata->attributeId, buffer);
+            }
         }
     }
 
@@ -418,6 +821,7 @@ CHIP_ERROR AppTask::Init(void)
     if (status == Protocols::InteractionModel::Status::Success && !level.IsNull())
     {
         sLevel = level.Value();
+        ChipLogProgress(DeviceLayer, "==add by clz:level value is %d in endpoint %d ", sLevel, kExampleEndpointId);
     }
 
     bool isOn;
@@ -428,6 +832,7 @@ CHIP_ERROR AppTask::Init(void)
         sTurnedOn = isOn;
         PwmManager::getInstance().setPwm(PwmManager::EAppPwm_Red, sTurnedOn);
     }
+    ChipLogProgress(DeviceLayer, "==add by clz:isOn value is %d in endpoint 1 ", isOn);
 
     for (size_t i = 0; i < CHIP_DEVICE_CONFIG_DYNAMIC_ENDPOINT_COUNT; i++)
     {
@@ -456,6 +861,10 @@ void AppTask::InitServer(intptr_t context)
 {
     // Set starting endpoint id where dynamic endpoints will be assigned, which
     // will be the next consecutive endpoint id after the last fixed endpoint.
+    uint16_t pre_compiled_endpoint_num = 0;
+    pre_compiled_endpoint_num          = static_cast<uint16_t>(emberAfFixedEndpointCount() - 1);
+    ChipLogProgress(DeviceLayer, "==add by clz:1:pre_compiled_endpoint_num is %d", pre_compiled_endpoint_num);
+
     gFirstDynamicEndpointId = static_cast<chip::EndpointId>(
         static_cast<int>(emberAfEndpointFromIndex(static_cast<uint16_t>(emberAfFixedEndpointCount() - 1))) + 1);
     gCurrentEndpointId = gFirstDynamicEndpointId;
@@ -464,29 +873,50 @@ void AppTask::InitServer(intptr_t context)
     // supported clusters so that ZAP will generate the requisite code.
     emberAfEndpointEnableDisable(emberAfEndpointFromIndex(static_cast<uint16_t>(emberAfFixedEndpointCount() - 1)), false);
 
+    pre_compiled_endpoint_num = static_cast<uint16_t>(emberAfFixedEndpointCount() - 1);
+    ChipLogProgress(DeviceLayer, "==add by clz:2:pre_compiled_endpoint_num is %d", pre_compiled_endpoint_num);
+
     // A bridge has root node device type on EP0 and aggregate node device type (bridge) at EP1
     emberAfSetDeviceTypeList(0, Span<const EmberAfDeviceType>(gRootDeviceTypes));
     emberAfSetDeviceTypeList(1, Span<const EmberAfDeviceType>(gAggregateNodeDeviceTypes));
 
+    pre_compiled_endpoint_num = static_cast<uint16_t>(emberAfFixedEndpointCount() - 1);
+    ChipLogProgress(DeviceLayer, "==add by clz:3:pre_compiled_endpoint_num is %d", pre_compiled_endpoint_num);
+
     // Add lights 1..3 --> will be mapped to ZCL endpoints 3, 4, 5
-    AddDeviceEndpoint(&gLight1, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffDeviceTypes),
+    AddDeviceEndpoint(&gLight1, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedDimmableLightDeviceTypes),
                       Span<DataVersion>(gLight1DataVersions), 1);
-    AddDeviceEndpoint(&gLight2, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffDeviceTypes),
+
+    pre_compiled_endpoint_num = static_cast<uint16_t>(emberAfFixedEndpointCount() - 1);
+    ChipLogProgress(DeviceLayer, "==add by clz:4:pre_compiled_endpoint_num is %d", pre_compiled_endpoint_num);
+
+    AddDeviceEndpoint(&gLight2, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedDimmableLightDeviceTypes),
                       Span<DataVersion>(gLight2DataVersions), 1);
-    AddDeviceEndpoint(&gLight3, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffDeviceTypes),
+    pre_compiled_endpoint_num = static_cast<uint16_t>(emberAfFixedEndpointCount() - 1);
+    ChipLogProgress(DeviceLayer, "==add by clz:5:pre_compiled_endpoint_num is %d", pre_compiled_endpoint_num);
+
+    AddDeviceEndpoint(&gLight3, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedDimmableLightDeviceTypes),
                       Span<DataVersion>(gLight3DataVersions), 1);
 
+    pre_compiled_endpoint_num = static_cast<uint16_t>(emberAfFixedEndpointCount() - 1);
+    ChipLogProgress(DeviceLayer, "==add by clz:6:pre_compiled_endpoint_num is %d", pre_compiled_endpoint_num);
     // Remove Light 2 -- Lights 1 & 3 will remain mapped to endpoints 3 & 5
     RemoveDeviceEndpoint(&gLight2);
 
+    pre_compiled_endpoint_num = static_cast<uint16_t>(emberAfFixedEndpointCount() - 1);
+    ChipLogProgress(DeviceLayer, "==add by clz:7:pre_compiled_endpoint_num is %d", pre_compiled_endpoint_num);
     // Add Light 4 -- > will be mapped to ZCL endpoint 6
-    AddDeviceEndpoint(&gLight4, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffDeviceTypes),
+    AddDeviceEndpoint(&gLight4, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedDimmableLightDeviceTypes),
                       Span<DataVersion>(gLight4DataVersions), 1);
 
+    pre_compiled_endpoint_num = static_cast<uint16_t>(emberAfFixedEndpointCount() - 1);
+    ChipLogProgress(DeviceLayer, "==add by clz:8:pre_compiled_endpoint_num is %d", pre_compiled_endpoint_num);
     // Re-add Light 2 -- > will be mapped to ZCL endpoint 7
-    AddDeviceEndpoint(&gLight2, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffDeviceTypes),
+    AddDeviceEndpoint(&gLight2, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedDimmableLightDeviceTypes),
                       Span<DataVersion>(gLight2DataVersions), 1);
 
+    pre_compiled_endpoint_num = static_cast<uint16_t>(emberAfFixedEndpointCount() - 1);
+    ChipLogProgress(DeviceLayer, "==add by clz:9:pre_compiled_endpoint_num is %d", pre_compiled_endpoint_num);
     // Add Temperature Sensor devices --> will be mapped to endpoint 8
     AddDeviceEndpoint(&TempSensor1, &bridgedTempSensorEndpoint, Span<const EmberAfDeviceType>(gBridgedTempSensorDeviceTypes),
                       Span<DataVersion>(gTempSensor1DataVersions), 1);

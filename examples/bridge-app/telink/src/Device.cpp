@@ -23,6 +23,8 @@
 
 #include <string>
 
+#define debug_msg(a, ...) printk("[ D ] %d %s(): " a, __LINE__, __func__, ##__VA_ARGS__)
+
 using namespace ::chip::Platform;
 
 Device::Device(const char * szDeviceName, const char * szLocation)
@@ -65,6 +67,90 @@ void Device::SetOnOff(bool aOn)
     if (changed && mChanged_CB)
     {
         mChanged_CB(this, kChanged_State);
+    }
+}
+
+void Device::SetLevel(uint8_t aLevel)
+{
+    debug_msg("aLevel[%d]\n", aLevel);
+    bool changed = false;
+
+    if (aLevel)
+    {
+        debug_msg("\n");
+        changed = (mLevel != aLevel);
+        mLevel  = aLevel;
+        ChipLogProgress(DeviceLayer, "Device[%s]: set Level [%d]", mName, aLevel);
+    }
+
+    if (changed && mChanged_CB)
+    {
+        debug_msg("\n");
+        mChanged_CB(this, kChanged_CurrentLevel);
+        debug_msg("\n");
+    }
+}
+
+void Device::SetDefaultMoveRate(uint8_t aDefaultMoveRate)
+{
+    debug_msg("aDefaultMoveRate[%d]\n", aDefaultMoveRate);
+    bool changed = false;
+
+    if (aDefaultMoveRate)
+    {
+        debug_msg("\n");
+        changed          = (mDefaultMoveRate != aDefaultMoveRate);
+        mDefaultMoveRate = aDefaultMoveRate;
+        ChipLogProgress(DeviceLayer, "Device[%s]: set DefaultMoveRate [%d]", mName, aDefaultMoveRate);
+    }
+
+    if (changed && mChanged_CB)
+    {
+        debug_msg("\n");
+        mChanged_CB(this, kChanged_DefaultMoveRate);
+        debug_msg("\n");
+    }
+}
+
+void Device::SetCurrentHue(uint8_t aCurrentHue)
+{
+    debug_msg("aCurrentHue[%d]\n", aCurrentHue);
+    bool changed = false;
+
+    if (aCurrentHue)
+    {
+        debug_msg("\n");
+        changed     = (mCurrentHue != aCurrentHue);
+        mCurrentHue = aCurrentHue;
+        ChipLogProgress(DeviceLayer, "Device[%s]: set CurrentHue [%d]", mName, aCurrentHue);
+    }
+
+    if (changed && mChanged_CB)
+    {
+        debug_msg("\n");
+        mChanged_CB(this, kChanged_CurrentHue);
+        debug_msg("\n");
+    }
+}
+
+void Device::SetCurrentSaturation(uint8_t aCurrentSaturation)
+{
+    debug_msg("aCurrentSaturation[%d]\n", aCurrentSaturation);
+    bool changed = false;
+
+    if (aCurrentSaturation)
+    {
+        debug_msg("\n");
+        changed            = (mCurrentSaturation != aCurrentSaturation);
+        mCurrentSaturation = aCurrentSaturation;
+        ChipLogProgress(DeviceLayer, "Device[%s]: set Changed_CurrentSaturation [%d]", mName, aCurrentSaturation);
+    }
+
+    if (changed && mChanged_CB)
+    {
+        debug_msg("\n");
+        mChanged_CB(this, kChanged_CurrentSaturation);
+        debug_msg("\n");
     }
 }
 
@@ -124,8 +210,7 @@ void Device::SetChangeCallback(DeviceCallback_fn aChanged_CB)
 
 DeviceTempSensor::DeviceTempSensor(const char * szDeviceName, std::string szLocation, int16_t min, int16_t max,
                                    int16_t measuredValue) :
-    Device(szDeviceName, szLocation.c_str()),
-    mMin(min), mMax(max), mMeasurement(measuredValue)
+    Device(szDeviceName, szLocation.c_str()), mMin(min), mMax(max), mMeasurement(measuredValue)
 {}
 
 void DeviceTempSensor::SetMeasuredValue(int16_t measurement)
