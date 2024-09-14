@@ -38,11 +38,15 @@ public:
 
     enum Changed_t
     {
-        kChanged_Reachable = 0x01,
-        kChanged_State     = 0x02,
-        kChanged_Location  = 0x04,
-        kChanged_Name      = 0x08,
-        kChanged_Last      = kChanged_Name,
+        kChanged_Reachable         = 0x01,
+        kChanged_State             = 0x02,
+        kChanged_Location          = 0x04,
+        kChanged_Name              = 0x08,
+        kChanged_CurrentLevel      = 0x10,
+        kChanged_DefaultMoveRate   = 0x20,
+        kChanged_CurrentHue        = 0x40,
+        kChanged_CurrentSaturation = 0x80,
+        kChanged_Last              = kChanged_CurrentSaturation,
     } Changed;
 
     Device(const char * szDeviceName, const char * szLocation);
@@ -50,6 +54,19 @@ public:
     bool IsOn() const;
     bool IsReachable() const;
     void SetOnOff(bool aOn);
+
+    void SetLevel(uint8_t aLevel);
+    inline uint8_t GetLevel() { return mLevel; };
+
+    void SetDefaultMoveRate(uint8_t aDefaultMoveRate);
+    inline uint8_t GetDefaultMoveRate() { return mDefaultMoveRate; };
+
+    void SetCurrentHue(uint8_t aCurrentHue);
+    inline uint8_t GetCurrentHue() { return mCurrentHue; };
+
+    void SetCurrentSaturation(uint8_t aCurrentSaturation);
+    inline uint8_t GetCurrentSaturation() { return mCurrentSaturation; };
+
     void SetReachable(bool aReachable);
     void SetName(const char * szDeviceName);
     void SetLocation(const char * szLocation);
@@ -68,6 +85,10 @@ private:
     char mLocation[kDeviceLocationSize];
     chip::EndpointId mEndpointId;
     DeviceCallback_fn mChanged_CB;
+    uint8_t mLevel;
+    uint8_t mDefaultMoveRate;
+    uint8_t mCurrentHue;
+    uint8_t mCurrentSaturation;
 };
 
 class DeviceTempSensor : public Device

@@ -35,3 +35,5 @@
 //  Until this is improved in OpenThread we need to increase the retransmission
 //  interval to survive the stall.
 #define CHIP_CONFIG_MRP_LOCAL_ACTIVE_RETRY_INTERVAL (1000_ms32)
+
+#define CHIP_DEVICE_CONFIG_DYNAMIC_ENDPOINT_COUNT 6
