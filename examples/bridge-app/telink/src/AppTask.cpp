@@ -28,12 +28,26 @@
 
 LOG_MODULE_DECLARE(app, CONFIG_CHIP_APP_LOG_LEVEL);
 
+#define LIGHT1_ENDPIONT 0x0003
+/*#define LIGHT2_ENDPIONT 0x0004*/
+#define LIGHT3_ENDPIONT 0x0005
+#define LIGHT4_ENDPIONT 0x0006
+#define LIGHT2_ENDPIONT 0x0007
+#define SENSOR1_ENDPIONT 0x0008
+
 namespace {
 bool sTurnedOn;
 uint8_t sLevel;
 
 std::unique_ptr<chip::app::Clusters::Actions::ActionsDelegateImpl> sActionsDelegateImpl;
 std::unique_ptr<chip::app::Clusters::Actions::ActionsServer> sActionsServer;
+int light1_idx;
+/*
+int light2_idx;
+int light3_idx;
+int light4_idx;
+int sensor1_idx;
+*/
 } // namespace
 
 void emberAfActionsClusterInitCallback(chip::EndpointId endpoint)
@@ -92,6 +106,10 @@ static DeviceTempSensor TempSensor1("TempSensor 1", "Office", minMeasuredValue, 
 #define DEVICE_TYPE_TEMP_SENSOR 0x0302
 // Device Version for dynamic endpoints:
 #define DEVICE_VERSION_DEFAULT 1
+
+// from src/app/zap-templates/zcl/data-model/chip/level-control-cluster.xml
+#define DEVICE_TYPE_LEVEL_CONTROL_LIGHT 0x0008
+#define DEVICE_TYPE_COLOR_CONTROL_LIGHT 0x0300
 
 /* REVISION definitions:
  */
@@ -281,6 +299,8 @@ const EmberAfDeviceType gRootDeviceTypes[]          = { { DEVICE_TYPE_ROOT_NODE,
 const EmberAfDeviceType gAggregateNodeDeviceTypes[] = { { DEVICE_TYPE_BRIDGE, DEVICE_VERSION_DEFAULT } };
 
 const EmberAfDeviceType gBridgedDimmableLightDeviceTypes[] = { { DEVICE_TYPE_DIMMALBE_LIGHT, DEVICE_VERSION_DEFAULT },
+                                                               { DEVICE_TYPE_LEVEL_CONTROL_LIGHT, DEVICE_VERSION_DEFAULT },
+                                                               { DEVICE_TYPE_COLOR_CONTROL_LIGHT, DEVICE_VERSION_DEFAULT },
                                                                { DEVICE_TYPE_BRIDGED_NODE, DEVICE_VERSION_DEFAULT } };
 
 const EmberAfDeviceType gBridgedTempSensorDeviceTypes[] = { { DEVICE_TYPE_TEMP_SENSOR, DEVICE_VERSION_DEFAULT },
@@ -418,6 +438,12 @@ Protocols::InteractionModel::Status HandleReadLevelControlAttribute(Device * dev
     {
         // *buffer = dev->GetLevel();
         uint8_t currentLevelValue = dev->GetLevel();
+        if (!currentLevelValue)
+        {
+            currentLevelValue = 100;
+            dev->SetLevel(100);
+            Clusters::LevelControl::Attributes::CurrentLevel::Set(LIGHT1_ENDPIONT, 100);
+        }
         debug_msg("currentLevelValue=[%u]\n", currentLevelValue);
         memcpy(buffer, &currentLevelValue, sizeof(currentLevelValue));
         debug_msg("*buffer=[%d]\n", *buffer);
@@ -427,54 +453,63 @@ Protocols::InteractionModel::Status HandleReadLevelControlAttribute(Device * dev
         debug_msg("RemainingTime\n");
         uint16_t remainingTime = 0;
         memcpy(buffer, &remainingTime, sizeof(remainingTime));
+        debug_msg("*buffer=[%d]\n", *buffer);
     }
     else if ((attributeId == MinLevel::Id) /* && (maxReadLength == 2)*/)
     {
         debug_msg("MinLevel\n");
         uint8_t MinLevel = 0;
         memcpy(buffer, &MinLevel, sizeof(MinLevel));
+        debug_msg("*buffer=[%d]\n", *buffer);
     }
     else if ((attributeId == MaxLevel::Id) /* && (maxReadLength == 2)*/)
     {
         debug_msg("MaxLevel\n");
         uint8_t MaxLevel = 254;
         memcpy(buffer, &MaxLevel, sizeof(MaxLevel));
+        debug_msg("*buffer=[%d]\n", *buffer);
     }
     else if ((attributeId == OnOffTransitionTime::Id) /* && (maxReadLength == 1)*/)
     {
         debug_msg("OnOffTransitionTime\n");
         uint8_t OnOffTransitionTime = 0;
         memcpy(buffer, &OnOffTransitionTime, sizeof(OnOffTransitionTime));
+        debug_msg("*buffer=[%d]\n", *buffer);
     }
     else if ((attributeId == OnLevel::Id) /* && (maxReadLength == 2)*/)
     {
         debug_msg("OnLevel\n");
         uint8_t OnLevel = 0;
         memcpy(buffer, &OnLevel, sizeof(OnLevel));
+        debug_msg("*buffer=[%d]\n", *buffer);
     }
     else if ((attributeId == OnTransitionTime::Id) /* && (maxReadLength == 1)*/)
     {
         debug_msg("OnTransitionTime\n");
         uint8_t OnTransitionTime = 0;
         memcpy(buffer, &OnTransitionTime, sizeof(OnTransitionTime));
+        debug_msg("*buffer=[%d]\n", *buffer);
     }
     else if ((attributeId == OffTransitionTime::Id) /* && (maxReadLength == 1)*/)
     {
         debug_msg("OffTransitionTime\n");
         uint8_t OffTransitionTime = 0;
         memcpy(buffer, &OffTransitionTime, sizeof(OffTransitionTime));
+        debug_msg("*buffer=[%d]\n", *buffer);
     }
     else if ((attributeId == StartUpCurrentLevel::Id) /* && (maxReadLength == 1)*/)
     {
         debug_msg("StartUpCurrentLevel\n");
         uint8_t StartUpCurrentLevel = 255;
         memcpy(buffer, &StartUpCurrentLevel, sizeof(StartUpCurrentLevel));
+        debug_msg("*buffer=[%d]\n", *buffer);
     }
     else if ((attributeId == Options::Id) /* && (maxReadLength == 1)*/)
     {
         debug_msg("Options\n");
-        uint8_t Options = 1;
+        uint8_t Options = 0xff;
         memcpy(buffer, &Options, sizeof(Options));
+        debug_msg("*buffer=[%d]\n", *buffer);
     }
     else if ((attributeId == DefaultMoveRate::Id) /* && (maxReadLength == 1)*/)
     {
@@ -488,6 +523,7 @@ Protocols::InteractionModel::Status HandleReadLevelControlAttribute(Device * dev
         debug_msg("ClusterRevision\n");
         uint16_t clusterRevision = ZCL_LEVEL_CONTROL_CLUSTER_REVISION;
         memcpy(buffer, &clusterRevision, sizeof(clusterRevision));
+        debug_msg("*buffer=[%d]\n", *buffer);
     }
     else
     {
@@ -500,14 +536,24 @@ Protocols::InteractionModel::Status HandleReadLevelControlAttribute(Device * dev
 
 Protocols::InteractionModel::Status HandleWriteLevelControlAttribute(Device * dev, chip::AttributeId attributeId, uint8_t * buffer)
 {
-    debug_msg("HandleWriteLevelControlAttribute: attrId=%d", attributeId);
+    debug_msg("HandleWriteLevelControlAttribute: attrId=%d\n", attributeId);
 
     if (dev->IsReachable())
     {
         if (attributeId == Clusters::LevelControl::Attributes::CurrentLevel::Id)
         {
             debug_msg("CurrentLevel\n");
+
             dev->SetLevel(*buffer);
+            if (dev->GetLevel())
+            {
+                dev->SetOnOff(true);
+            }
+            else
+            {
+                dev->SetOnOff(false);
+            }
+
             return Protocols::InteractionModel::Status::Success;
         }
         else if (attributeId == Clusters::LevelControl::Attributes::DefaultMoveRate::Id)
@@ -815,18 +861,18 @@ CHIP_ERROR AppTask::Init(void)
 
     Protocols::InteractionModel::Status status;
 
-    app::DataModel::Nullable<uint8_t> level;
-    // Read brightness value
-    status = Clusters::LevelControl::Attributes::CurrentLevel::Get(kExampleEndpointId, level);
-    if (status == Protocols::InteractionModel::Status::Success && !level.IsNull())
-    {
-        sLevel = level.Value();
-        ChipLogProgress(DeviceLayer, "==add by clz:level value is %d in endpoint %d ", sLevel, kExampleEndpointId);
-    }
+    // app::DataModel::Nullable<uint8_t> level;
+    //  Read brightness value
+    // status = Clusters::LevelControl::Attributes::CurrentLevel::Get(LIGHT1_ENDPIONT, level);
+    // if (status == Protocols::InteractionModel::Status::Success && !level.IsNull())
+    //{
+    //     sLevel = level.Value();
+    //     ChipLogProgress(DeviceLayer, "==add by clz:level value is %d in endpoint %d ", sLevel, kExampleEndpointId);
+    // }
 
     bool isOn;
     // Read storedValue on/off value
-    status = Clusters::OnOff::Attributes::OnOff::Get(1, &isOn);
+    status = Clusters::OnOff::Attributes::OnOff::Get(LIGHT1_ENDPIONT, &isOn);
     if (status == Protocols::InteractionModel::Status::Success)
     {
         sTurnedOn = isOn;
@@ -840,17 +886,20 @@ CHIP_ERROR AppTask::Init(void)
     }
 
     gLight1.SetReachable(true);
+    /*
     gLight2.SetReachable(true);
     gLight3.SetReachable(true);
     gLight4.SetReachable(true);
     TempSensor1.SetReachable(true);
+    */
 
     // Whenever bridged device changes its state
     gLight1.SetChangeCallback(&HandleDeviceStatusChanged);
-    gLight2.SetChangeCallback(&HandleDeviceStatusChanged);
+    /* gLight2.SetChangeCallback(&HandleDeviceStatusChanged);
     gLight3.SetChangeCallback(&HandleDeviceStatusChanged);
     gLight4.SetChangeCallback(&HandleDeviceStatusChanged);
     TempSensor1.SetChangeCallback(&HandleDeviceTempSensorStatusChanged);
+    */
 
     PlatformMgr().ScheduleWork(InitServer, reinterpret_cast<intptr_t>(nullptr));
 
@@ -863,7 +912,6 @@ void AppTask::InitServer(intptr_t context)
     // will be the next consecutive endpoint id after the last fixed endpoint.
     uint16_t pre_compiled_endpoint_num = 0;
     pre_compiled_endpoint_num          = static_cast<uint16_t>(emberAfFixedEndpointCount() - 1);
-    ChipLogProgress(DeviceLayer, "==add by clz:1:pre_compiled_endpoint_num is %d", pre_compiled_endpoint_num);
 
     gFirstDynamicEndpointId = static_cast<chip::EndpointId>(
         static_cast<int>(emberAfEndpointFromIndex(static_cast<uint16_t>(emberAfFixedEndpointCount() - 1))) + 1);
@@ -884,9 +932,9 @@ void AppTask::InitServer(intptr_t context)
     ChipLogProgress(DeviceLayer, "==add by clz:3:pre_compiled_endpoint_num is %d", pre_compiled_endpoint_num);
 
     // Add lights 1..3 --> will be mapped to ZCL endpoints 3, 4, 5
-    AddDeviceEndpoint(&gLight1, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedDimmableLightDeviceTypes),
-                      Span<DataVersion>(gLight1DataVersions), 1);
-
+    light1_idx = AddDeviceEndpoint(&gLight1, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedDimmableLightDeviceTypes),
+                                   Span<DataVersion>(gLight1DataVersions), 1);
+    /*
     pre_compiled_endpoint_num = static_cast<uint16_t>(emberAfFixedEndpointCount() - 1);
     ChipLogProgress(DeviceLayer, "==add by clz:4:pre_compiled_endpoint_num is %d", pre_compiled_endpoint_num);
 
@@ -920,6 +968,26 @@ void AppTask::InitServer(intptr_t context)
     // Add Temperature Sensor devices --> will be mapped to endpoint 8
     AddDeviceEndpoint(&TempSensor1, &bridgedTempSensorEndpoint, Span<const EmberAfDeviceType>(gBridgedTempSensorDeviceTypes),
                       Span<DataVersion>(gTempSensor1DataVersions), 1);
+    */
+    Device * dev_init = gDevices[light1_idx];
+    if (dev_init->IsReachable())
+    {
+        Protocols::InteractionModel::Status status;
+        EndpointId light_endpiont = LIGHT1_ENDPIONT;
+        app::DataModel::Nullable<uint8_t> init_level;
+        Clusters::LevelControl::Attributes::MaxLevel::Set(LIGHT1_ENDPIONT, 254);
+        Clusters::LevelControl::Attributes::MinLevel::Set(LIGHT1_ENDPIONT, 0);
+
+        status = Clusters::LevelControl::Attributes::CurrentLevel::Set(LIGHT1_ENDPIONT, 100);
+        status = Clusters::LevelControl::Attributes::CurrentLevel::Get(LIGHT1_ENDPIONT, init_level);
+        if (status == Protocols::InteractionModel::Status::Success && !init_level.IsNull())
+        {
+            sLevel = init_level.Value();
+            ChipLogProgress(DeviceLayer, "==add by clz:init_level value is %d in endpoint %d ", sLevel, light_endpiont);
+
+            dev_init->SetLevel(sLevel);
+        }
+    }
 }
 
 void HandleDeviceTempSensorStatusChanged(DeviceTempSensor * dev, DeviceTempSensor::Changed_t itemChangedMask)
@@ -1009,5 +1077,14 @@ void AppTask::UpdateClusterState(void)
     if (status != Protocols::InteractionModel::Status::Success)
     {
         LOG_ERR("Update CurrentLevel fail: %x", to_underlying(status));
+    }
+    Device * dev_init = gDevices[light1_idx];
+    if (dev_init->IsReachable())
+    {
+        EndpointId light_endpiont = LIGHT1_ENDPIONT;
+
+        ChipLogProgress(DeviceLayer, "==add by clz:level value is %d in endpoint %d ", setLevel, light_endpiont);
+
+        dev_init->SetLevel(setLevel);
     }
 }
