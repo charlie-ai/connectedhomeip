@@ -115,58 +115,69 @@ static DeviceTempSensor TempSensor1("TempSensor 1", "Office", minMeasuredValue, 
 
 // Declare On/Off cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(onOffAttrs)
-DECLARE_DYNAMIC_ATTRIBUTE(Clusters::OnOff::Attributes::OnOff::Id, BOOLEAN, 1, 0), /* on/off */
+DECLARE_DYNAMIC_ATTRIBUTE(Clusters::OnOff::Attributes::OnOff::Id, BOOLEAN, 1, ATTRIBUTE_MASK_WRITABLE), /* on/off */
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::OnOff::Attributes::ClusterRevision::Id, INT16U, ZCL_ON_OFF_CLUSTER_REVISION, 0),
     DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 // Declare level control cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(levelControlAttrs)
-DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::CurrentLevel::Id, INT8U, 1, 0), /* CurrentLevel */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::RemainingTime::Id, INT16U, 1, 0),
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::MinLevel::Id, INT8U, 1, 0),
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::MaxLevel::Id, INT8U, 1, 0),
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::CurrentFrequency::Id, INT16U, 1, 0),
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::MinFrequency::Id, INT16U, 1, 0),
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::MaxFrequency::Id, INT16U, 1, 0),
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::Options::Id, BITMAP8, 1, 0),
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::OnOffTransitionTime::Id, INT16U, 1, 0),
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::OnLevel::Id, INT8U, 1, 0),
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::OnTransitionTime::Id, INT16U, 1, 0),
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::OffTransitionTime::Id, INT16U, 1, 0),
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::StartUpCurrentLevel::Id, INT8U, 1, 0),
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::DefaultMoveRate::Id, INT8U, 1, 0), /* DefaultMoveRate */
+DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::CurrentLevel::Id, INT8U, 1,
+                          ATTRIBUTE_MASK_WRITABLE), /* CurrentLevel */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::RemainingTime::Id, INT16U, 1, ATTRIBUTE_MASK_WRITABLE),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::MinLevel::Id, INT8U, 1, ATTRIBUTE_MASK_WRITABLE),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::MaxLevel::Id, INT8U, 1, ATTRIBUTE_MASK_WRITABLE),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::CurrentFrequency::Id, INT16U, 1, ATTRIBUTE_MASK_WRITABLE),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::MinFrequency::Id, INT16U, 1, ATTRIBUTE_MASK_WRITABLE),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::MaxFrequency::Id, INT16U, 1, ATTRIBUTE_MASK_WRITABLE),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::Options::Id, BITMAP8, 1, ATTRIBUTE_MASK_WRITABLE),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::OnOffTransitionTime::Id, INT16U, 1, ATTRIBUTE_MASK_WRITABLE),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::OnLevel::Id, INT8U, 1, ATTRIBUTE_MASK_WRITABLE),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::OnTransitionTime::Id, INT16U, 1, ATTRIBUTE_MASK_WRITABLE),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::OffTransitionTime::Id, INT16U, 1, ATTRIBUTE_MASK_WRITABLE),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::StartUpCurrentLevel::Id, INT8U, 1, ATTRIBUTE_MASK_WRITABLE),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::DefaultMoveRate::Id, INT8U, 1,
+                              ATTRIBUTE_MASK_WRITABLE), /* DefaultMoveRate */
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::ClusterRevision::Id, INT16U, ZCL_LEVEL_CONTROL_CLUSTER_REVISION,
                               0),
     DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 // Declare color control cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(colorControlAttrs)
-DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::CurrentHue::Id, INT8U, 1, 0),            /* CurrentHue */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::CurrentSaturation::Id, INT8U, 1, 0), /* CurrentSaturation */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::RemainingTime::Id, INT16U, 1, 0),    /* RemainingTime */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::CurrentX::Id, INT16U, 1, 0),         /* CurrentX */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::CurrentY::Id, INT16U, 1, 0),         /* CurrentY */
+DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::CurrentHue::Id, INT8U, 1, ATTRIBUTE_MASK_WRITABLE), /* CurrentHue */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::CurrentSaturation::Id, INT8U, 1,
+                              ATTRIBUTE_MASK_WRITABLE), /* CurrentSaturation */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::RemainingTime::Id, INT16U, 1,
+                              ATTRIBUTE_MASK_WRITABLE), /* RemainingTime */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::CurrentX::Id, INT16U, 1, ATTRIBUTE_MASK_WRITABLE), /* CurrentX */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::CurrentY::Id, INT16U, 1, ATTRIBUTE_MASK_WRITABLE), /* CurrentY */
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorTemperatureMireds::Id, INT16U, 1,
-                              0),                                                                      /* ColorTemperatureMireds */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorMode::Id, INT8U, 1, 0),         /* ColorMode */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::Options::Id, INT8U, 1, 0),           /* Options */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::NumberOfPrimaries::Id, INT8U, 1, 0), /* NumberOfPrimaries */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::EnhancedCurrentHue::Id, INT16U, 1, 0), /* EnhancedCurrentHue */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::EnhancedColorMode::Id, INT8U, 1, 0),   /* EnhancedColorMode */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorLoopActive::Id, INT8U, 1, 0),     /* ColorLoopActive */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorLoopDirection::Id, INT8U, 1, 0),  /* ColorLoopDirection */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorLoopTime::Id, INT16U, 1, 0),      /* ColorLoopTime */
+                              ATTRIBUTE_MASK_WRITABLE), /* ColorTemperatureMireds */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorMode::Id, INT8U, 1, ATTRIBUTE_MASK_WRITABLE), /* ColorMode */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::Options::Id, INT8U, 1, ATTRIBUTE_MASK_WRITABLE),   /* Options */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::NumberOfPrimaries::Id, INT8U, 1,
+                              ATTRIBUTE_MASK_WRITABLE), /* NumberOfPrimaries */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::EnhancedCurrentHue::Id, INT16U, 1,
+                              ATTRIBUTE_MASK_WRITABLE), /* EnhancedCurrentHue */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::EnhancedColorMode::Id, INT8U, 1,
+                              ATTRIBUTE_MASK_WRITABLE), /* EnhancedColorMode */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorLoopActive::Id, INT8U, 1,
+                              ATTRIBUTE_MASK_WRITABLE), /* ColorLoopActive */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorLoopDirection::Id, INT8U, 1,
+                              ATTRIBUTE_MASK_WRITABLE), /* ColorLoopDirection */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorLoopTime::Id, INT16U, 1,
+                              ATTRIBUTE_MASK_WRITABLE), /* ColorLoopTime */
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorLoopStartEnhancedHue::Id, INT16U, 1,
-                              0), /* ColorLoopStartEnhancedHue */
+                              ATTRIBUTE_MASK_WRITABLE), /* ColorLoopStartEnhancedHue */
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorLoopStoredEnhancedHue::Id, INT16U, 1,
-                              0), /* ColorLoopStoredEnhancedHue */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorCapabilities::Id, INT8U, 1, 0), /* ColorCapabilities */
+                              ATTRIBUTE_MASK_WRITABLE), /* ColorLoopStoredEnhancedHue */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorCapabilities::Id, INT8U, 1,
+                              ATTRIBUTE_MASK_WRITABLE), /* ColorCapabilities */
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorTempPhysicalMinMireds::Id, INT16U, 1,
-                              0), /* ColorTempPhysicalMinMireds */
+                              ATTRIBUTE_MASK_WRITABLE), /* ColorTempPhysicalMinMireds */
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorTempPhysicalMaxMireds::Id, INT16U, 1,
-                              0), /* ColorTempPhysicalMaxMireds */
+                              ATTRIBUTE_MASK_WRITABLE), /* ColorTempPhysicalMaxMireds */
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ClusterRevision::Id, INT16U, ZCL_COLOR_CONTROL_CLUSTER_REVISION,
-                              0),
+                              ATTRIBUTE_MASK_WRITABLE),
     DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 // Declare Descriptor cluster attributes
