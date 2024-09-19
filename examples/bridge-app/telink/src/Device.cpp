@@ -80,7 +80,7 @@ void Device::SetLevel(uint8_t aLevel)
         debug_msg("\n");
         changed = (mLevel != aLevel);
         mLevel  = aLevel;
-        debug_msg("Device[%s]: set Level [%d]", mName, aLevel);
+        debug_msg("Device[%s]: set Level [%d]\n", mName, aLevel);
     }
 
     if (changed && mChanged_CB)

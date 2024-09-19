@@ -953,15 +953,15 @@ static Status moveToLevelHandler(EndpointId endpoint, CommandId commandId, uint8
 
     // Move To Level commands cause the device to move from its current level to
     // the specified level at the specified rate.
-    // if (state->maxLevel <= level)
-    // {
-    //     state->moveToLevel = state->maxLevel;
-    // }
-    // else if (level <= state->minLevel)
-    // {
-    //     state->moveToLevel = state->minLevel;
-    // }
-    // else
+    if (state->maxLevel <= level)
+    {
+        state->moveToLevel = state->maxLevel;
+    }
+    else if (level <= state->minLevel)
+    {
+        state->moveToLevel = state->minLevel;
+    }
+    else
     {
         state->moveToLevel = level;
     }
@@ -1518,7 +1518,7 @@ void emberAfOnOffClusterLevelControlEffectCallback(EndpointId endpoint, bool new
 
 void emberAfLevelControlClusterServerInitCallback(EndpointId endpoint)
 {
-    debug_msg("emberAfLevelControlClusterServerInitCallback\n");
+    debug_msg("emberAfLevelControlClusterServerInitCallback endpoint=0x%x\n", endpoint);
 
     EmberAfLevelControlState * state = getState(endpoint);
 
@@ -1531,10 +1531,16 @@ void emberAfLevelControlClusterServerInitCallback(EndpointId endpoint)
     state->minLevel = MATTER_DM_PLUGIN_LEVEL_CONTROL_MINIMUM_LEVEL;
     state->maxLevel = MATTER_DM_PLUGIN_LEVEL_CONTROL_MAXIMUM_LEVEL;
 
+    debug_msg("moveToLevelHandler1 state->minLevel=0x%x\n", state->minLevel);
+    debug_msg("moveToLevelHandler1 state->maxLevel=0x%x\n", state->maxLevel);
+
     // If these read only attributes are enabled we use those values as our set minLevel and maxLevel
     // if get isn't possible, value stays at default
     Attributes::MinLevel::Get(endpoint, &state->minLevel);
     Attributes::MaxLevel::Get(endpoint, &state->maxLevel);
+
+    debug_msg("moveToLevelHandler2 state->minLevel=0x%x\n", state->minLevel);
+    debug_msg("moveToLevelHandler2 state->maxLevel=0x%x\n", state->maxLevel);
 
     if (LevelControlHasFeature(endpoint, Feature::kLighting))
     {
