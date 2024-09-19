@@ -19,6 +19,7 @@
 #include "AppTask.h"
 #include "Device.h"
 #include "PWMManager.h"
+#include <app-common/zap-generated/callback.h>
 
 #include <app-common/zap-generated/attributes/Accessors.h>
 #include <app/reporting/reporting.h>
@@ -420,12 +421,12 @@ Protocols::InteractionModel::Status HandleReadLevelControlAttribute(Device * dev
     {
         // *buffer = dev->GetLevel();
         uint8_t currentLevelValue = dev->GetLevel();
-        if (!currentLevelValue)
-        {
-            currentLevelValue = 100;
-            dev->SetLevel(100);
-            Clusters::LevelControl::Attributes::CurrentLevel::Set(LIGHT1_ENDPIONT, 100);
-        }
+        // if (!currentLevelValue)
+        // {
+        //     currentLevelValue = 100;
+        //     dev->SetLevel(100);
+        //     Clusters::LevelControl::Attributes::CurrentLevel::Set(LIGHT1_ENDPIONT, 100);
+        // }
         debug_msg("currentLevelValue=[%u]\n", currentLevelValue);
         memcpy(buffer, &currentLevelValue, sizeof(currentLevelValue));
         debug_msg("*buffer=[%d]\n", *buffer);
@@ -924,6 +925,7 @@ void AppTask::InitServer(intptr_t context)
     // Add lights 1..3 --> will be mapped to ZCL endpoints 3, 4, 5
     light1_idx = AddDeviceEndpoint(&gLight1, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedDimmableLightDeviceTypes),
                                    Span<DataVersion>(gLight1DataVersions), 1);
+    debug_msg("light1_idx=0x%x\n", light1_idx);
     /*
     pre_compiled_endpoint_num = static_cast<uint16_t>(emberAfFixedEndpointCount() - 1);
     ChipLogProgress(DeviceLayer, "==add by clz:4:pre_compiled_endpoint_num is %d", pre_compiled_endpoint_num);
@@ -959,6 +961,9 @@ void AppTask::InitServer(intptr_t context)
     AddDeviceEndpoint(&TempSensor1, &bridgedTempSensorEndpoint, Span<const EmberAfDeviceType>(gBridgedTempSensorDeviceTypes),
                       Span<DataVersion>(gTempSensor1DataVersions), 1);
     */
+    emberAfLevelControlClusterServerInitCallback(LIGHT1_ENDPIONT);
+    debug_msg("light1_idx=0x%x\n", LIGHT1_ENDPIONT);
+
     Device * dev_init = gDevices[light1_idx];
     if (dev_init->IsReachable())
     {
