@@ -125,6 +125,9 @@ DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::CurrentLevel::Id, 
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::RemainingTime::Id, INT16U, 1, 0),
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::MinLevel::Id, INT8U, 1, 0),
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::MaxLevel::Id, INT8U, 1, 0),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::CurrentFrequency::Id, INT16U, 1, 0),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::MinFrequency::Id, INT16U, 1, 0),
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::MaxFrequency::Id, INT16U, 1, 0),
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::Options::Id, BITMAP8, 1, 0),
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::OnOffTransitionTime::Id, INT16U, 1, 0),
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::OnLevel::Id, INT8U, 1, 0),
@@ -448,8 +451,29 @@ Protocols::InteractionModel::Status HandleReadLevelControlAttribute(Device * dev
     else if ((attributeId == MaxLevel::Id) /* && (maxReadLength == 2)*/)
     {
         debug_msg("MaxLevel\n");
-        uint8_t MaxLevel = 254;
-        memcpy(buffer, &MaxLevel, sizeof(MaxLevel));
+        uint8_t maxLevel = 254;
+        memcpy(buffer, &maxLevel, sizeof(maxLevel));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == CurrentFrequency::Id) /* && (maxReadLength == 2)*/)
+    {
+        debug_msg("CurrentFrequency\n");
+        uint8_t currentFrequency = 254;
+        memcpy(buffer, &currentFrequency, sizeof(currentFrequency));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == MinFrequency::Id) /* && (maxReadLength == 2)*/)
+    {
+        debug_msg("MinFrequency\n");
+        uint8_t minFrequency = 254;
+        memcpy(buffer, &minFrequency, sizeof(minFrequency));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == MaxFrequency::Id) /* && (maxReadLength == 2)*/)
+    {
+        debug_msg("MaxFrequency\n");
+        uint8_t maxFrequency = 254;
+        memcpy(buffer, &maxFrequency, sizeof(maxFrequency));
         debug_msg("*buffer=[%d]\n", *buffer);
     }
     else if ((attributeId == OnOffTransitionTime::Id) /* && (maxReadLength == 1)*/)
