@@ -57,7 +57,7 @@ using namespace chip::app::Clusters;
 using namespace chip::app::Clusters::LevelControl;
 using chip::Protocols::InteractionModel::Status;
 
-#define debug_msg(a, ...) printk("[ D ] %d %s(): " a, __LINE__, __func__, ##__VA_ARGS__)
+#define debug_msg(a, ...) printk("[ LEV_CT ] %d %s(): " a, __LINE__, __func__, ##__VA_ARGS__)
 
 #ifndef IGNORE_LEVEL_CONTROL_CLUSTER_START_UP_CURRENT_LEVEL
 static bool areStartUpLevelControlServerAttributesNonVolatile(EndpointId endpoint);
