@@ -795,6 +795,8 @@ Protocols::InteractionModel::Status emberAfExternalAttributeReadCallback(Endpoin
 {
     using namespace Clusters;
 
+    debug_msg("emberAfExternalAttributeReadCallback: ClusterId=0x%x endpoint=0x%x\n", clusterId, endpoint);
+
     uint16_t endpointIndex = emberAfGetDynamicIndexFromEndpoint(endpoint);
 
     if ((endpointIndex < CHIP_DEVICE_CONFIG_DYNAMIC_ENDPOINT_COUNT) && (gDevices[endpointIndex] != NULL))
@@ -831,6 +833,8 @@ Protocols::InteractionModel::Status emberAfExternalAttributeWriteCallback(Endpoi
                                                                           const EmberAfAttributeMetadata * attributeMetadata,
                                                                           uint8_t * buffer)
 {
+    debug_msg("emberAfExternalAttributeWriteCallback: ClusterId=0x%x endpoint=0x%x\n", clusterId, endpoint);
+
     uint16_t endpointIndex = emberAfGetDynamicIndexFromEndpoint(endpoint);
 
     if (endpointIndex < CHIP_DEVICE_CONFIG_DYNAMIC_ENDPOINT_COUNT)

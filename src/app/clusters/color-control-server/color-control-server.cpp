@@ -38,6 +38,8 @@ using namespace chip::app::Clusters;
 using namespace chip::app::Clusters::ColorControl;
 using chip::Protocols::InteractionModel::Status;
 
+#define debug_msg(a, ...) printk("[ COL_CT ] %d %s(): " a, __LINE__, __func__, ##__VA_ARGS__)
+
 #if defined(MATTER_DM_PLUGIN_SCENES_MANAGEMENT) && CHIP_CONFIG_SCENES_USE_DEFAULT_HANDLERS
 class DefaultColorControlSceneHandler : public scenes::DefaultSceneHandlerImpl
 {
@@ -53,6 +55,8 @@ public:
     // endpoint
     void GetSupportedClusters(EndpointId endpoint, Span<ClusterId> & clusterBuffer) override
     {
+        debug_msg("GetSupportedClusters\n");
+
         ClusterId * buffer = clusterBuffer.data();
         if (emberAfContainsServer(endpoint, ColorControl::Id) && clusterBuffer.size() >= 1)
         {
@@ -68,6 +72,7 @@ public:
     // Default function for ColorControl cluster, only checks if ColorControl is enabled on the endpoint
     bool SupportsCluster(EndpointId endpoint, ClusterId cluster) override
     {
+        debug_msg("SupportsCluster\n");
         return (cluster == ColorControl::Id) && (emberAfContainsServer(endpoint, ColorControl::Id));
     }
 
@@ -78,6 +83,8 @@ public:
     /// @return CHIP_NO_ERROR if successfully serialized the data, CHIP_ERROR_INVALID_ARGUMENT otherwise
     CHIP_ERROR SerializeSave(EndpointId endpoint, ClusterId cluster, MutableByteSpan & serializedBytes) override
     {
+        debug_msg("SerializeSave\n");
+
         using AttributeValuePair = ScenesManagement::Structs::AttributeValuePairStruct::Type;
 
         AttributeValuePair pairs[kColorControlScenableAttributesCount];
@@ -173,6 +180,8 @@ public:
     CHIP_ERROR ApplyScene(EndpointId endpoint, ClusterId cluster, const ByteSpan & serializedBytes,
                           scenes::TransitionTimeMs timeMs) override
     {
+        debug_msg("ApplyScene\n");
+
         app::DataModel::DecodableList<ScenesManagement::Structs::AttributeValuePairStruct::DecodableType> attributeValueList;
 
         ReturnErrorOnFailure(DecodeAttributeValueList(serializedBytes, attributeValueList));
@@ -340,6 +349,8 @@ public:
 private:
     bool SupportsColorMode(EndpointId endpoint, EnhancedColorMode mode)
     {
+        debug_msg("SupportsColorMode\n");
+
         switch (mode)
         {
         case EnhancedColorMode::kCurrentHueAndCurrentSaturation:
@@ -370,6 +381,8 @@ private:
     void AddAttributeValuePair(ScenesManagement::Structs::AttributeValuePairStruct::Type * pairs, AttributeId id, Type value,
                                size_t & attributeCount)
     {
+        debug_msg("AddAttributeValuePair\n");
+
         static_assert((std::is_same_v<Type, uint8_t>) || (std::is_same_v<Type, uint16_t>), "Type must be uint8_t or uint16_t");
 
         pairs[attributeCount].attributeID = id;
@@ -393,12 +406,16 @@ static DefaultColorControlSceneHandler sColorControlSceneHandler;
 
 void ColorControlServer::timerCallback(System::Layer *, void * callbackContext)
 {
+    debug_msg("timerCallback\n");
+
     auto control = static_cast<EmberEventControl *>(callbackContext);
     (control->callback)(control->endpoint);
 }
 
 void ColorControlServer::scheduleTimerCallbackMs(EmberEventControl * control, uint32_t delayMs)
 {
+    debug_msg("scheduleTimerCallbackMs\n");
+
     CHIP_ERROR err = DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(delayMs), timerCallback, control);
 
     if (err != CHIP_NO_ERROR)
@@ -409,11 +426,15 @@ void ColorControlServer::scheduleTimerCallbackMs(EmberEventControl * control, ui
 
 void ColorControlServer::cancelEndpointTimerCallback(EmberEventControl * control)
 {
+    debug_msg("cancelEndpointTimerCallback 1\n");
+
     DeviceLayer::SystemLayer().CancelTimer(timerCallback, control);
 }
 
 void ColorControlServer::cancelEndpointTimerCallback(EndpointId endpoint)
 {
+    debug_msg("cancelEndpointTimerCallback 2\n");
+
     auto control = ColorControlServer::getEventControl(endpoint);
     if (control)
     {
@@ -433,17 +454,23 @@ ColorControlServer ColorControlServer::instance;
 
 ColorControlServer & ColorControlServer::Instance()
 {
+    debug_msg("Instance\n");
+
     return instance;
 }
 
 uint16_t ColorControlServer::getEndpointIndex(EndpointId endpoint)
 {
+    debug_msg("getEndpointIndex\n");
+
     return emberAfGetClusterServerEndpointIndex(endpoint, ColorControl::Id, MATTER_DM_COLOR_CONTROL_CLUSTER_SERVER_ENDPOINT_COUNT);
 }
 
 #ifdef MATTER_DM_PLUGIN_SCENES_MANAGEMENT
 chip::scenes::SceneHandler * ColorControlServer::GetSceneHandler()
 {
+    debug_msg("GetSceneHandler\n");
+
 #if CHIP_CONFIG_SCENES_USE_DEFAULT_HANDLERS
     return &sColorControlSceneHandler;
 #else
@@ -454,6 +481,8 @@ chip::scenes::SceneHandler * ColorControlServer::GetSceneHandler()
 
 bool ColorControlServer::HasFeature(chip::EndpointId endpoint, Feature feature)
 {
+    debug_msg("HasFeature\n");
+
     bool success;
     uint32_t featureMap;
     success = (Attributes::FeatureMap::Get(endpoint, &featureMap) == Status::Success);
@@ -463,6 +492,8 @@ bool ColorControlServer::HasFeature(chip::EndpointId endpoint, Feature feature)
 
 Status ColorControlServer::stopAllColorTransitions(EndpointId endpoint)
 {
+    debug_msg("stopAllColorTransitions\n");
+
     EmberEventControl * event = getEventControl(endpoint);
     VerifyOrReturnError(event != nullptr, Status::UnsupportedEndpoint);
 
@@ -473,6 +504,8 @@ Status ColorControlServer::stopAllColorTransitions(EndpointId endpoint)
 bool ColorControlServer::stopMoveStepCommand(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                              BitMask<OptionsBitmap> optionsMask, BitMask<OptionsBitmap> optionsOverride)
 {
+    debug_msg("stopMoveStepCommand\n");
+
     EndpointId endpoint = commandPath.mEndpointId;
     Status status       = Status::Success;
 
@@ -514,6 +547,8 @@ bool ColorControlServer::stopMoveStepCommand(app::CommandHandler * commandObj, c
 bool ColorControlServer::shouldExecuteIfOff(EndpointId endpoint, BitMask<OptionsBitmap> optionMask,
                                             BitMask<OptionsBitmap> optionOverride)
 {
+    debug_msg("shouldExecuteIfOff\n");
+
     // From 5.2.2.2.1.10 of ZCL7 document 14-0129-15f-zcl-ch-5-lighting.docx:
     //   "Command execution SHALL NOT continue beyond the Options processing if
     //    all of these criteria are true:
@@ -586,6 +621,8 @@ bool ColorControlServer::shouldExecuteIfOff(EndpointId endpoint, BitMask<Options
  */
 void ColorControlServer::handleModeSwitch(EndpointId endpoint, EnhancedColorModeEnum newColorMode)
 {
+    debug_msg("handleModeSwitch\n");
+
     auto oldColorMode = ColorModeEnum::kCurrentHueAndCurrentSaturation;
     Attributes::ColorMode::Get(endpoint, &oldColorMode);
 
@@ -647,6 +684,8 @@ void ColorControlServer::handleModeSwitch(EndpointId endpoint, EnhancedColorMode
  */
 uint16_t ColorControlServer::computeTransitionTimeFromStateAndRate(ColorControlServer::Color16uTransitionState * p, uint16_t rate)
 {
+    debug_msg("computeTransitionTimeFromStateAndRate\n");
+
     uint32_t transitionTime;
     uint16_t max, min;
 
@@ -689,6 +728,8 @@ uint16_t ColorControlServer::computeTransitionTimeFromStateAndRate(ColorControlS
  */
 EmberEventControl * ColorControlServer::getEventControl(EndpointId endpoint)
 {
+    debug_msg("getEventControl\n");
+
     uint16_t index            = getEndpointIndex(endpoint);
     EmberEventControl * event = nullptr;
 
@@ -735,6 +776,8 @@ void ColorControlServer::computePwmFromXy(EndpointId endpoint) {}
  */
 bool ColorControlServer::computeNewColor16uValue(ColorControlServer::Color16uTransitionState * p)
 {
+    debug_msg("computeNewColor16uValue\n");
+
     uint32_t newValue32u;
 
     // Color value isn't moving
@@ -818,6 +861,8 @@ bool ColorControlServer::computeNewColor16uValue(ColorControlServer::Color16uTra
  */
 ColorControlServer::ColorHueTransitionState * ColorControlServer::getColorHueTransitionStateByIndex(uint16_t index)
 {
+    debug_msg("getColorHueTransitionStateByIndex\n");
+
     ColorHueTransitionState * state = nullptr;
 
     if (index < ArraySize(colorHueTransitionStates))
@@ -835,6 +880,8 @@ ColorControlServer::ColorHueTransitionState * ColorControlServer::getColorHueTra
  */
 ColorControlServer::ColorHueTransitionState * ColorControlServer::getColorHueTransitionState(EndpointId endpoint)
 {
+    debug_msg("getColorHueTransitionState\n");
+
     return getColorHueTransitionStateByIndex(getEndpointIndex(endpoint));
 }
 
@@ -846,6 +893,8 @@ ColorControlServer::ColorHueTransitionState * ColorControlServer::getColorHueTra
  */
 ColorControlServer::Color16uTransitionState * ColorControlServer::getSaturationTransitionStateByIndex(uint16_t index)
 {
+    debug_msg("getSaturationTransitionStateByIndex\n");
+
     Color16uTransitionState * state = nullptr;
 
     if (index < ArraySize(colorSatTransitionStates))
@@ -863,6 +912,8 @@ ColorControlServer::Color16uTransitionState * ColorControlServer::getSaturationT
  */
 ColorControlServer::Color16uTransitionState * ColorControlServer::getSaturationTransitionState(EndpointId endpoint)
 {
+    debug_msg("getSaturationTransitionState\n");
+
     return getSaturationTransitionStateByIndex(getEndpointIndex(endpoint));
 }
 
@@ -874,6 +925,8 @@ ColorControlServer::Color16uTransitionState * ColorControlServer::getSaturationT
  */
 uint8_t ColorControlServer::getSaturation(EndpointId endpoint)
 {
+    debug_msg("getSaturation\n");
+
     uint8_t saturation = 0;
     Attributes::CurrentSaturation::Get(endpoint, &saturation);
 
@@ -890,6 +943,8 @@ uint8_t ColorControlServer::getSaturation(EndpointId endpoint)
  */
 uint8_t ColorControlServer::addHue(uint8_t hue1, uint8_t hue2)
 {
+    debug_msg("addHue\n");
+
     uint16_t hue16;
 
     hue16 = ((uint16_t) hue1);
@@ -912,6 +967,8 @@ uint8_t ColorControlServer::addHue(uint8_t hue1, uint8_t hue2)
  */
 uint8_t ColorControlServer::subtractHue(uint8_t hue1, uint8_t hue2)
 {
+    debug_msg("subtractHue\n");
+
     uint16_t hue16;
 
     hue16 = ((uint16_t) hue1);
@@ -934,6 +991,8 @@ uint8_t ColorControlServer::subtractHue(uint8_t hue1, uint8_t hue2)
  */
 uint8_t ColorControlServer::addSaturation(uint8_t saturation1, uint8_t saturation2)
 {
+    debug_msg("addSaturation\n");
+
     uint16_t saturation16;
 
     saturation16 = ((uint16_t) saturation1);
@@ -956,6 +1015,8 @@ uint8_t ColorControlServer::addSaturation(uint8_t saturation1, uint8_t saturatio
  */
 uint8_t ColorControlServer::subtractSaturation(uint8_t saturation1, uint8_t saturation2)
 {
+    debug_msg("subtractSaturation\n");
+
     if (saturation2 > saturation1)
     {
         return MIN_SATURATION_VALUE;
@@ -973,6 +1034,8 @@ uint8_t ColorControlServer::subtractSaturation(uint8_t saturation1, uint8_t satu
  */
 uint16_t ColorControlServer::addEnhancedHue(uint16_t hue1, uint16_t hue2)
 {
+    debug_msg("addEnhancedHue\n");
+
     return static_cast<uint16_t>(hue1 + hue2);
 }
 
@@ -985,6 +1048,8 @@ uint16_t ColorControlServer::addEnhancedHue(uint16_t hue1, uint16_t hue2)
  */
 uint16_t ColorControlServer::subtractEnhancedHue(uint16_t hue1, uint16_t hue2)
 {
+    debug_msg("subtractEnhancedHue\n");
+
     return static_cast<uint16_t>(hue1 - hue2);
 }
 
@@ -996,6 +1061,8 @@ uint16_t ColorControlServer::subtractEnhancedHue(uint16_t hue1, uint16_t hue2)
  */
 void ColorControlServer::startColorLoop(EndpointId endpoint, uint8_t startFromStartHue)
 {
+    debug_msg("startColorLoop\n");
+
     ColorHueTransitionState * colorHueTransitionState = getColorHueTransitionState(endpoint);
     VerifyOrReturn(colorHueTransitionState != nullptr);
 
@@ -1052,6 +1119,8 @@ void ColorControlServer::startColorLoop(EndpointId endpoint, uint8_t startFromSt
 void ColorControlServer::initHueTransitionState(EndpointId endpoint, ColorHueTransitionState * colorHueTransitionState,
                                                 bool isEnhancedHue)
 {
+    debug_msg("initHueTransitionState\n");
+
     colorHueTransitionState->stepsRemaining = 0;
     colorHueTransitionState->timeRemaining  = 0;
     colorHueTransitionState->isEnhancedHue  = isEnhancedHue;
@@ -1075,6 +1144,8 @@ void ColorControlServer::initHueTransitionState(EndpointId endpoint, ColorHueTra
  */
 void ColorControlServer::initSaturationTransitionState(chip::EndpointId endpoint, Color16uTransitionState * colorSatTransitionState)
 {
+    debug_msg("initSaturationTransitionState\n");
+
     colorSatTransitionState->stepsRemaining = 0;
     colorSatTransitionState->timeRemaining  = 0;
     colorSatTransitionState->endpoint       = endpoint;
@@ -1084,6 +1155,8 @@ void ColorControlServer::initSaturationTransitionState(chip::EndpointId endpoint
 
 void ColorControlServer::SetHSVRemainingTime(chip::EndpointId endpoint)
 {
+    debug_msg("SetHSVRemainingTime\n");
+
     uint16_t epIndex                                    = getEndpointIndex(endpoint);
     ColorHueTransitionState * hueTransitionState        = getColorHueTransitionStateByIndex(epIndex);
     Color16uTransitionState * saturationTransitionState = getSaturationTransitionStateByIndex(epIndex);
@@ -1107,6 +1180,8 @@ void ColorControlServer::SetHSVRemainingTime(chip::EndpointId endpoint)
  */
 bool ColorControlServer::computeNewHueValue(ColorControlServer::ColorHueTransitionState * p)
 {
+    debug_msg("computeNewHueValue\n");
+
     uint32_t newHue32;
     uint16_t newHue;
 
@@ -1251,6 +1326,8 @@ bool ColorControlServer::computeNewHueValue(ColorControlServer::ColorHueTransiti
  */
 EmberEventControl * ColorControlServer::configureHSVEventControl(EndpointId endpoint)
 {
+    debug_msg("configureHSVEventControl\n");
+
     EmberEventControl * controller = getEventControl(endpoint);
     VerifyOrReturnError(controller != nullptr, nullptr);
 
@@ -1271,6 +1348,8 @@ EmberEventControl * ColorControlServer::configureHSVEventControl(EndpointId endp
  */
 Status ColorControlServer::moveToSaturation(uint8_t saturation, uint16_t transitionTime, EndpointId endpoint)
 {
+    debug_msg("moveToSaturation\n");
+
     Color16uTransitionState * colorSaturationTransitionState = getSaturationTransitionState(endpoint);
     VerifyOrReturnError(nullptr != colorSaturationTransitionState, Status::UnsupportedEndpoint);
 
@@ -1314,6 +1393,8 @@ Status ColorControlServer::moveToSaturation(uint8_t saturation, uint16_t transit
 Status ColorControlServer::moveToHueAndSaturation(uint16_t hue, uint8_t saturation, uint16_t transitionTime, bool isEnhanced,
                                                   EndpointId endpoint)
 {
+    debug_msg("moveToHueAndSaturation\n");
+
     uint16_t currentHue = 0;
     uint16_t halfWay    = isEnhanced ? HALF_MAX_UINT16T : HALF_MAX_UINT8T;
     bool moveUp;
@@ -1405,6 +1486,8 @@ bool ColorControlServer::moveHueCommand(app::CommandHandler * commandObj, const 
                                         HueMoveMode moveMode, uint16_t rate, BitMask<OptionsBitmap> optionsMask,
                                         BitMask<OptionsBitmap> optionsOverride, bool isEnhanced)
 {
+    debug_msg("moveHueCommand\n");
+
     MATTER_TRACE_SCOPE("moveHue", "ColorControl");
     EndpointId endpoint = commandPath.mEndpointId;
     Status status       = Status::Success;
@@ -1516,6 +1599,8 @@ bool ColorControlServer::moveToHueCommand(app::CommandHandler * commandObj, cons
                                           BitMask<OptionsBitmap> optionsMask, BitMask<OptionsBitmap> optionsOverride,
                                           bool isEnhanced)
 {
+    debug_msg("moveToHueCommand\n");
+
     MATTER_TRACE_SCOPE("moveToHue", "ColorControl");
     EndpointId endpoint = commandPath.mEndpointId;
 
@@ -1653,6 +1738,8 @@ bool ColorControlServer::moveToHueAndSaturationCommand(app::CommandHandler * com
                                                        BitMask<OptionsBitmap> optionsMask, BitMask<OptionsBitmap> optionsOverride,
                                                        bool isEnhanced)
 {
+    debug_msg("moveToHueAndSaturationCommand\n");
+
     MATTER_TRACE_SCOPE("moveToHueAndSaturation", "ColorControl");
     // limit checking:  hue and saturation are 0..254.  Spec dictates we ignore
     // this and report a constraint error.
@@ -1693,6 +1780,8 @@ bool ColorControlServer::stepHueCommand(app::CommandHandler * commandObj, const 
                                         HueStepMode stepMode, uint16_t stepSize, uint16_t transitionTime,
                                         BitMask<OptionsBitmap> optionsMask, BitMask<OptionsBitmap> optionsOverride, bool isEnhanced)
 {
+    debug_msg("stepHueCommand\n");
+
     MATTER_TRACE_SCOPE("stepHue", "ColorControl");
     EndpointId endpoint = commandPath.mEndpointId;
 
@@ -1778,6 +1867,8 @@ exit:
 bool ColorControlServer::moveSaturationCommand(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                const Commands::MoveSaturation::DecodableType & commandData)
 {
+    debug_msg("moveSaturationCommand\n");
+
     MATTER_TRACE_SCOPE("moveSaturation", "ColorControl");
     auto & moveMode        = commandData.moveMode;
     auto & rate            = commandData.rate;
@@ -1865,6 +1956,8 @@ exit:
 bool ColorControlServer::moveToSaturationCommand(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                  const Commands::MoveToSaturation::DecodableType & commandData)
 {
+    debug_msg("moveToSaturationCommand\n");
+
     MATTER_TRACE_SCOPE("moveToSaturation", "ColorControl");
     // limit checking: saturation is 0..254.  Spec dictates we ignore
     // this and report a malformed packet.
@@ -1890,6 +1983,8 @@ bool ColorControlServer::moveToSaturationCommand(app::CommandHandler * commandOb
 bool ColorControlServer::stepSaturationCommand(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                const Commands::StepSaturation::DecodableType & commandData)
 {
+    debug_msg("stepSaturationCommand\n");
+
     MATTER_TRACE_SCOPE("stepSaturation", "ColorControl");
     auto stepMode                          = commandData.stepMode;
     uint8_t stepSize                       = commandData.stepSize;
@@ -1955,6 +2050,8 @@ exit:
 bool ColorControlServer::colorLoopCommand(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                           const Commands::ColorLoopSet::DecodableType & commandData)
 {
+    debug_msg("colorLoopCommand\n");
+
     MATTER_TRACE_SCOPE("colorLoop", "ColorControl");
     auto updateFlags                       = commandData.updateFlags;
     auto action                            = commandData.action;
@@ -2088,6 +2185,8 @@ exit:
  */
 void ColorControlServer::updateHueSatCommand(EndpointId endpoint)
 {
+    debug_msg("updateHueSatCommand\n");
+
     MATTER_TRACE_SCOPE("updateHueSat", "ColorControl");
     uint16_t epIndex                                         = getEndpointIndex(endpoint);
     ColorHueTransitionState * colorHueTransitionState        = getColorHueTransitionStateByIndex(epIndex);
@@ -2161,6 +2260,8 @@ void ColorControlServer::updateHueSatCommand(EndpointId endpoint)
  */
 ColorControlServer::Color16uTransitionState * ColorControlServer::getXTransitionStateByIndex(uint16_t index)
 {
+    debug_msg("getXTransitionStateByIndex\n");
+
     Color16uTransitionState * state = nullptr;
     if (index < ArraySize(colorXtransitionStates))
     {
@@ -2178,6 +2279,8 @@ ColorControlServer::Color16uTransitionState * ColorControlServer::getXTransition
  */
 ColorControlServer::Color16uTransitionState * ColorControlServer::getXTransitionState(EndpointId endpoint)
 {
+    debug_msg("getXTransitionState\n");
+
     return getXTransitionStateByIndex(getEndpointIndex(endpoint));
 }
 
@@ -2189,6 +2292,8 @@ ColorControlServer::Color16uTransitionState * ColorControlServer::getXTransition
  */
 ColorControlServer::Color16uTransitionState * ColorControlServer::getYTransitionStateByIndex(uint16_t index)
 {
+    debug_msg("getYTransitionStateByIndex\n");
+
     Color16uTransitionState * state = nullptr;
     if (index < ArraySize(colorYtransitionStates))
     {
@@ -2206,11 +2311,15 @@ ColorControlServer::Color16uTransitionState * ColorControlServer::getYTransition
  */
 ColorControlServer::Color16uTransitionState * ColorControlServer::getYTransitionState(EndpointId endpoint)
 {
+    debug_msg("getYTransitionState\n");
+
     return getYTransitionStateByIndex(getEndpointIndex(endpoint));
 }
 
 uint16_t ColorControlServer::findNewColorValueFromStep(uint16_t oldValue, int16_t step)
 {
+    debug_msg("findNewColorValueFromStep\n");
+
     uint16_t newValue;
     int32_t newValueSigned;
 
@@ -2239,6 +2348,8 @@ uint16_t ColorControlServer::findNewColorValueFromStep(uint16_t oldValue, int16_
  */
 EmberEventControl * ColorControlServer::configureXYEventControl(EndpointId endpoint)
 {
+    debug_msg("configureXYEventControl\n");
+
     EmberEventControl * controller = getEventControl(endpoint);
     VerifyOrReturnError(controller != nullptr, nullptr);
 
@@ -2259,6 +2370,8 @@ EmberEventControl * ColorControlServer::configureXYEventControl(EndpointId endpo
  */
 Status ColorControlServer::moveToColor(uint16_t colorX, uint16_t colorY, uint16_t transitionTime, EndpointId endpoint)
 {
+    debug_msg("moveToColor\n");
+
     uint16_t epIndex                                = getEndpointIndex(endpoint);
     Color16uTransitionState * colorXTransitionState = getXTransitionStateByIndex(epIndex);
     Color16uTransitionState * colorYTransitionState = getYTransitionStateByIndex(epIndex);
@@ -2306,6 +2419,8 @@ Status ColorControlServer::moveToColor(uint16_t colorX, uint16_t colorY, uint16_
 bool ColorControlServer::moveToColorCommand(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                             const Commands::MoveToColor::DecodableType & commandData)
 {
+    debug_msg("moveToColorCommand\n");
+
     if (!shouldExecuteIfOff(commandPath.mEndpointId, commandData.optionsMask, commandData.optionsOverride))
     {
         commandObj->AddStatus(commandPath, Status::Success);
@@ -2323,6 +2438,8 @@ bool ColorControlServer::moveToColorCommand(app::CommandHandler * commandObj, co
 bool ColorControlServer::moveColorCommand(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                           const Commands::MoveColor::DecodableType & commandData)
 {
+    debug_msg("moveColorCommand\n");
+
     int16_t rateX                          = commandData.rateX;
     int16_t rateY                          = commandData.rateY;
     BitMask<OptionsBitmap> optionsMask     = commandData.optionsMask;
@@ -2415,6 +2532,8 @@ exit:
 bool ColorControlServer::stepColorCommand(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                           const Commands::StepColor::DecodableType & commandData)
 {
+    debug_msg("stepColorCommand\n");
+
     int16_t stepX                          = commandData.stepX;
     int16_t stepY                          = commandData.stepY;
     uint16_t transitionTime                = commandData.transitionTime;
@@ -2499,6 +2618,8 @@ exit:
  */
 void ColorControlServer::updateXYCommand(EndpointId endpoint)
 {
+    debug_msg("updateXYCommand\n");
+
     uint16_t epIndex                                = getEndpointIndex(endpoint);
     Color16uTransitionState * colorXTransitionState = getXTransitionStateByIndex(epIndex);
     Color16uTransitionState * colorYTransitionState = getYTransitionStateByIndex(epIndex);
@@ -2542,6 +2663,8 @@ void ColorControlServer::updateXYCommand(EndpointId endpoint)
  */
 ColorControlServer::Color16uTransitionState * ColorControlServer::getTempTransitionStateByIndex(uint16_t index)
 {
+    debug_msg("getTempTransitionStateByIndex\n");
+
     Color16uTransitionState * state = nullptr;
     if (index < ArraySize(colorTempTransitionStates))
     {
@@ -2559,6 +2682,8 @@ ColorControlServer::Color16uTransitionState * ColorControlServer::getTempTransit
  */
 ColorControlServer::Color16uTransitionState * ColorControlServer::getTempTransitionState(EndpointId endpoint)
 {
+    debug_msg("getTempTransitionState\n");
+
     return getTempTransitionStateByIndex(getEndpointIndex(endpoint));
 }
 
@@ -2572,6 +2697,8 @@ ColorControlServer::Color16uTransitionState * ColorControlServer::getTempTransit
  */
 Status ColorControlServer::moveToColorTemp(EndpointId aEndpoint, uint16_t colorTemperature, uint16_t transitionTime)
 {
+    debug_msg("moveToColorTemp\n");
+
     EndpointId endpoint = aEndpoint;
 
     Color16uTransitionState * colorTempTransitionState = getTempTransitionState(endpoint);
@@ -2630,6 +2757,8 @@ Status ColorControlServer::moveToColorTemp(EndpointId aEndpoint, uint16_t colorT
  */
 uint16_t ColorControlServer::getTemperatureCoupleToLevelMin(EndpointId endpoint)
 {
+    debug_msg("getTemperatureCoupleToLevelMin\n");
+
     uint16_t colorTemperatureCoupleToLevelMin;
     Status status;
 
@@ -2654,6 +2783,8 @@ uint16_t ColorControlServer::getTemperatureCoupleToLevelMin(EndpointId endpoint)
  */
 EmberEventControl * ColorControlServer::configureTempEventControl(EndpointId endpoint)
 {
+    debug_msg("configureTempEventControl\n");
+
     EmberEventControl * controller = getEventControl(endpoint);
     VerifyOrReturnError(controller != nullptr, nullptr);
 
@@ -2665,6 +2796,8 @@ EmberEventControl * ColorControlServer::configureTempEventControl(EndpointId end
 
 void ColorControlServer::startUpColorTempCommand(EndpointId endpoint)
 {
+    debug_msg("startUpColorTempCommand\n");
+
     // 07-5123-07 (i.e. ZCL 7) 5.2.2.2.1.22 StartUpColorTemperatureMireds Attribute
     // The StartUpColorTemperatureMireds attribute SHALL define the desired startup color
     // temperature values a lamp SHALL use when it is supplied with power and this value SHALL
@@ -2719,6 +2852,8 @@ void ColorControlServer::startUpColorTempCommand(EndpointId endpoint)
  */
 void ColorControlServer::updateTempCommand(EndpointId endpoint)
 {
+    debug_msg("updateTempCommand\n");
+
     uint16_t epIndex                                   = getEndpointIndex(endpoint);
     Color16uTransitionState * colorTempTransitionState = getTempTransitionStateByIndex(epIndex);
     bool isColorTempTransitionDone;
@@ -2778,6 +2913,8 @@ void ColorControlServer::updateTempCommand(EndpointId endpoint)
 bool ColorControlServer::moveColorTempCommand(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                               const Commands::MoveColorTemperature::DecodableType & commandData)
 {
+    debug_msg("moveColorTempCommand\n");
+
     auto moveMode                          = commandData.moveMode;
     uint16_t rate                          = commandData.rate;
     uint16_t colorTemperatureMinimum       = commandData.colorTemperatureMinimumMireds;
@@ -2888,6 +3025,8 @@ exit:
 bool ColorControlServer::moveToColorTempCommand(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                 const Commands::MoveToColorTemperature::DecodableType & commandData)
 {
+    debug_msg("moveToColorTempCommand\n");
+
     if (!shouldExecuteIfOff(commandPath.mEndpointId, commandData.optionsMask, commandData.optionsOverride))
     {
         commandObj->AddStatus(commandPath, Status::Success);
@@ -2905,6 +3044,8 @@ bool ColorControlServer::moveToColorTempCommand(app::CommandHandler * commandObj
 bool ColorControlServer::stepColorTempCommand(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                               const Commands::StepColorTemperature::DecodableType & commandData)
 {
+    debug_msg("stepColorTempCommand\n");
+
     auto stepMode                          = commandData.stepMode;
     uint16_t stepSize                      = commandData.stepSize;
     uint16_t transitionTime                = commandData.transitionTime;
@@ -3010,6 +3151,8 @@ exit:
 
 void ColorControlServer::levelControlColorTempChangeCommand(EndpointId endpoint)
 {
+    debug_msg("levelControlColorTempChangeCommand\n");
+
     // ZCL 5.2.2.1.1 Coupling color temperature to Level Control
     //
     // If the Level Control for Lighting cluster identifier 0x0008 is supported
@@ -3114,6 +3257,8 @@ template <typename Q, typename V>
 MarkAttributeDirty ColorControlServer::SetQuietReportAttribute(QuieterReportingAttribute<Q> & quietReporter, V newValue,
                                                                bool isEndOfTransition, uint16_t transitionTime)
 {
+    debug_msg("SetQuietReportAttribute\n");
+
     AttributeDirtyState dirtyState;
     auto now = System::SystemClock().GetMonotonicTimestamp();
 
@@ -3160,6 +3305,8 @@ MarkAttributeDirty ColorControlServer::SetQuietReportAttribute(QuieterReportingA
  */
 Status ColorControlServer::SetQuietReportRemainingTime(EndpointId endpoint, uint16_t newRemainingTime, bool isNewTransition)
 {
+    debug_msg("SetQuietReportRemainingTime\n");
+
     uint16_t epIndex           = getEndpointIndex(endpoint);
     uint16_t lastRemainingTime = quietRemainingTime[epIndex].value().ValueOr(0);
     auto markDirty             = MarkAttributeDirty::kNo;
@@ -3201,6 +3348,8 @@ Status ColorControlServer::SetQuietReportRemainingTime(EndpointId endpoint, uint
 bool emberAfColorControlClusterMoveHueCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                const Commands::MoveHue::DecodableType & commandData)
 {
+    debug_msg("emberAfColorControlClusterMoveHueCallback\n");
+
     return ColorControlServer::Instance().moveHueCommand(commandObj, commandPath, commandData.moveMode, commandData.rate,
                                                          commandData.optionsMask, commandData.optionsOverride, false);
 }
@@ -3209,6 +3358,7 @@ bool emberAfColorControlClusterMoveSaturationCallback(app::CommandHandler * comm
                                                       const app::ConcreteCommandPath & commandPath,
                                                       const Commands::MoveSaturation::DecodableType & commandData)
 {
+    debug_msg("emberAfColorControlClusterMoveSaturationCallback\n");
 
     return ColorControlServer::Instance().moveSaturationCommand(commandObj, commandPath, commandData);
 }
@@ -3216,6 +3366,7 @@ bool emberAfColorControlClusterMoveSaturationCallback(app::CommandHandler * comm
 bool emberAfColorControlClusterMoveToHueCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                  const Commands::MoveToHue::DecodableType & commandData)
 {
+    debug_msg("emberAfColorControlClusterMoveToHueCallback\n");
     return ColorControlServer::Instance().moveToHueCommand(commandObj, commandPath, commandData.hue, commandData.direction,
                                                            commandData.transitionTime, commandData.optionsMask,
                                                            commandData.optionsOverride, false);
@@ -3225,6 +3376,8 @@ bool emberAfColorControlClusterMoveToSaturationCallback(app::CommandHandler * co
                                                         const app::ConcreteCommandPath & commandPath,
                                                         const Commands::MoveToSaturation::DecodableType & commandData)
 {
+    debug_msg("emberAfColorControlClusterMoveToSaturationCallback\n");
+
     return ColorControlServer::Instance().moveToSaturationCommand(commandObj, commandPath, commandData);
 }
 
@@ -3232,6 +3385,8 @@ bool emberAfColorControlClusterMoveToHueAndSaturationCallback(app::CommandHandle
                                                               const app::ConcreteCommandPath & commandPath,
                                                               const Commands::MoveToHueAndSaturation::DecodableType & commandData)
 {
+    debug_msg("emberAfColorControlClusterMoveToHueAndSaturationCallback\n");
+
     return ColorControlServer::Instance().moveToHueAndSaturationCommand(
         commandObj, commandPath, commandData.hue, commandData.saturation, commandData.transitionTime, commandData.optionsMask,
         commandData.optionsOverride, false);
@@ -3240,6 +3395,7 @@ bool emberAfColorControlClusterMoveToHueAndSaturationCallback(app::CommandHandle
 bool emberAfColorControlClusterStepHueCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                const Commands::StepHue::DecodableType & commandData)
 {
+    debug_msg("emberAfColorControlClusterStepHueCallback\n");
     return ColorControlServer::Instance().stepHueCommand(commandObj, commandPath, commandData.stepMode, commandData.stepSize,
                                                          commandData.transitionTime, commandData.optionsMask,
                                                          commandData.optionsOverride, false);
@@ -3249,6 +3405,8 @@ bool emberAfColorControlClusterStepSaturationCallback(app::CommandHandler * comm
                                                       const app::ConcreteCommandPath & commandPath,
                                                       const Commands::StepSaturation::DecodableType & commandData)
 {
+    debug_msg("emberAfColorControlClusterStepSaturationCallback\n");
+
     return ColorControlServer::Instance().stepSaturationCommand(commandObj, commandPath, commandData);
 }
 
@@ -3256,6 +3414,8 @@ bool emberAfColorControlClusterEnhancedMoveHueCallback(app::CommandHandler * com
                                                        const app::ConcreteCommandPath & commandPath,
                                                        const Commands::EnhancedMoveHue::DecodableType & commandData)
 {
+    debug_msg("emberAfColorControlClusterEnhancedMoveHueCallback\n");
+
     return ColorControlServer::Instance().moveHueCommand(commandObj, commandPath, commandData.moveMode, commandData.rate,
                                                          commandData.optionsMask, commandData.optionsOverride, true);
 }
@@ -3264,6 +3424,8 @@ bool emberAfColorControlClusterEnhancedMoveToHueCallback(app::CommandHandler * c
                                                          const app::ConcreteCommandPath & commandPath,
                                                          const Commands::EnhancedMoveToHue::DecodableType & commandData)
 {
+    debug_msg("emberAfColorControlClusterEnhancedMoveToHueCallback\n");
+
     return ColorControlServer::Instance().moveToHueCommand(commandObj, commandPath, commandData.enhancedHue, commandData.direction,
                                                            commandData.transitionTime, commandData.optionsMask,
                                                            commandData.optionsOverride, true);
@@ -3273,6 +3435,8 @@ bool emberAfColorControlClusterEnhancedMoveToHueAndSaturationCallback(
     app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
     const Commands::EnhancedMoveToHueAndSaturation::DecodableType & commandData)
 {
+    debug_msg("emberAfColorControlClusterEnhancedMoveToHueAndSaturationCallback\n");
+
     return ColorControlServer::Instance().moveToHueAndSaturationCommand(commandObj, commandPath, commandData.enhancedHue,
                                                                         commandData.saturation, commandData.transitionTime,
                                                                         commandData.optionsMask, commandData.optionsOverride, true);
@@ -3282,6 +3446,7 @@ bool emberAfColorControlClusterEnhancedStepHueCallback(app::CommandHandler * com
                                                        const app::ConcreteCommandPath & commandPath,
                                                        const Commands::EnhancedStepHue::DecodableType & commandData)
 {
+    debug_msg("emberAfColorControlClusterEnhancedStepHueCallback\n");
     return ColorControlServer::Instance().stepHueCommand(commandObj, commandPath, commandData.stepMode, commandData.stepSize,
                                                          commandData.transitionTime, commandData.optionsMask,
                                                          commandData.optionsOverride, true);
@@ -3290,6 +3455,7 @@ bool emberAfColorControlClusterEnhancedStepHueCallback(app::CommandHandler * com
 bool emberAfColorControlClusterColorLoopSetCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                     const Commands::ColorLoopSet::DecodableType & commandData)
 {
+    debug_msg("emberAfColorControlClusterColorLoopSetCallback\n");
     return ColorControlServer::Instance().colorLoopCommand(commandObj, commandPath, commandData);
 }
 
@@ -3300,18 +3466,22 @@ bool emberAfColorControlClusterColorLoopSetCallback(app::CommandHandler * comman
 bool emberAfColorControlClusterMoveToColorCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                    const Commands::MoveToColor::DecodableType & commandData)
 {
+    debug_msg("emberAfColorControlClusterMoveToColorCallback\n");
+
     return ColorControlServer::Instance().moveToColorCommand(commandObj, commandPath, commandData);
 }
 
 bool emberAfColorControlClusterMoveColorCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                  const Commands::MoveColor::DecodableType & commandData)
 {
+    debug_msg("emberAfColorControlClusterMoveColorCallback\n");
     return ColorControlServer::Instance().moveColorCommand(commandObj, commandPath, commandData);
 }
 
 bool emberAfColorControlClusterStepColorCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                  const Commands::StepColor::DecodableType & commandData)
 {
+    debug_msg("emberAfColorControlClusterStepColorCallback\n");
     return ColorControlServer::Instance().stepColorCommand(commandObj, commandPath, commandData);
 }
 
@@ -3323,6 +3493,7 @@ bool emberAfColorControlClusterMoveToColorTemperatureCallback(app::CommandHandle
                                                               const app::ConcreteCommandPath & commandPath,
                                                               const Commands::MoveToColorTemperature::DecodableType & commandData)
 {
+    debug_msg("emberAfColorControlClusterMoveToColorTemperatureCallback\n");
     return ColorControlServer::Instance().moveToColorTempCommand(commandObj, commandPath, commandData);
 }
 
@@ -3330,6 +3501,7 @@ bool emberAfColorControlClusterMoveColorTemperatureCallback(app::CommandHandler 
                                                             const app::ConcreteCommandPath & commandPath,
                                                             const Commands::MoveColorTemperature::DecodableType & commandData)
 {
+    debug_msg("emberAfColorControlClusterMoveColorTemperatureCallback\n");
     return ColorControlServer::Instance().moveColorTempCommand(commandObj, commandPath, commandData);
 }
 
@@ -3337,11 +3509,13 @@ bool emberAfColorControlClusterStepColorTemperatureCallback(app::CommandHandler 
                                                             const app::ConcreteCommandPath & commandPath,
                                                             const Commands::StepColorTemperature::DecodableType & commandData)
 {
+    debug_msg("emberAfColorControlClusterStepColorTemperatureCallback\n");
     return ColorControlServer::Instance().stepColorTempCommand(commandObj, commandPath, commandData);
 }
 
 void emberAfPluginLevelControlCoupledColorTempChangeCallback(EndpointId endpoint)
 {
+    debug_msg("emberAfPluginLevelControlCoupledColorTempChangeCallback\n");
     ColorControlServer::Instance().levelControlColorTempChangeCommand(endpoint);
 }
 
@@ -3350,12 +3524,15 @@ void emberAfPluginLevelControlCoupledColorTempChangeCallback(EndpointId endpoint
 bool emberAfColorControlClusterStopMoveStepCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                     const Commands::StopMoveStep::DecodableType & commandData)
 {
+    debug_msg("emberAfColorControlClusterStopMoveStepCallback\n");
     return ColorControlServer::Instance().stopMoveStepCommand(commandObj, commandPath, commandData.optionsMask,
                                                               commandData.optionsOverride);
 }
 
 void emberAfColorControlClusterServerInitCallback(EndpointId endpoint)
 {
+    debug_msg("emberAfColorControlClusterServerInitCallback endpoint=0x%x\n", endpoint);
+
 #ifdef MATTER_DM_PLUGIN_COLOR_CONTROL_SERVER_TEMP
     ColorControlServer::Instance().startUpColorTempCommand(endpoint);
 #endif // MATTER_DM_PLUGIN_COLOR_CONTROL_SERVER_TEMP
@@ -3368,6 +3545,7 @@ void emberAfColorControlClusterServerInitCallback(EndpointId endpoint)
 
 void MatterColorControlClusterServerShutdownCallback(EndpointId endpoint)
 {
+    debug_msg("MatterColorControlClusterServerShutdownCallback\n");
     ChipLogProgress(Zcl, "Shuting down color control server cluster on endpoint %d", endpoint);
     ColorControlServer::Instance().cancelEndpointTimerCallback(endpoint);
 }
@@ -3380,6 +3558,8 @@ void MatterColorControlClusterServerShutdownCallback(EndpointId endpoint)
  */
 void emberAfPluginColorControlServerTempTransitionEventHandler(EndpointId endpoint)
 {
+    debug_msg("emberAfPluginColorControlServerTempTransitionEventHandler\n");
+
     ColorControlServer::Instance().updateTempCommand(endpoint);
 }
 #endif // MATTER_DM_PLUGIN_COLOR_CONTROL_SERVER_TEMP
@@ -3392,6 +3572,8 @@ void emberAfPluginColorControlServerTempTransitionEventHandler(EndpointId endpoi
  */
 void emberAfPluginColorControlServerXyTransitionEventHandler(EndpointId endpoint)
 {
+    debug_msg("emberAfPluginColorControlServerXyTransitionEventHandler\n");
+
     ColorControlServer::Instance().updateXYCommand(endpoint);
 }
 #endif // MATTER_DM_PLUGIN_COLOR_CONTROL_SERVER_XY
@@ -3404,6 +3586,8 @@ void emberAfPluginColorControlServerXyTransitionEventHandler(EndpointId endpoint
  */
 void emberAfPluginColorControlServerHueSatTransitionEventHandler(EndpointId endpoint)
 {
+    debug_msg("emberAfPluginColorControlServerHueSatTransitionEventHandler\n");
+
     ColorControlServer::Instance().updateHueSatCommand(endpoint);
 }
 #endif // MATTER_DM_PLUGIN_COLOR_CONTROL_SERVER_HSV
