@@ -3218,7 +3218,7 @@ endpoint 1 {
   }
 }
 endpoint 2 {
-  device type ma_dimmablelight = 257, version 1;
+  device type ma_extendedcolorlight = 269, version 1;
 
 
   server cluster Identify {
@@ -3262,6 +3262,10 @@ endpoint 2 {
     ram      attribute onTime default = 0;
     ram      attribute offWaitTime default = 0;
     ram      attribute startUpOnOff;
+    callback attribute generatedCommandList;
+    callback attribute acceptedCommandList;
+    callback attribute eventList;
+    callback attribute attributeList;
     ram      attribute featureMap default = 0;
     ram      attribute clusterRevision default = 5;
 
@@ -3288,6 +3292,10 @@ endpoint 2 {
     ram      attribute offTransitionTime;
     ram      attribute defaultMoveRate;
     persist  attribute startUpCurrentLevel default = 255;
+    callback attribute generatedCommandList;
+    callback attribute acceptedCommandList;
+    callback attribute eventList;
+    callback attribute attributeList;
     ram      attribute featureMap default = 3;
     ram      attribute clusterRevision default = 6;
 
@@ -3306,6 +3314,10 @@ endpoint 2 {
     callback attribute serverList;
     callback attribute clientList;
     callback attribute partsList;
+    callback attribute generatedCommandList;
+    callback attribute acceptedCommandList;
+    callback attribute eventList;
+    callback attribute attributeList;
     callback attribute featureMap;
     callback attribute clusterRevision;
   }
@@ -3358,12 +3370,30 @@ endpoint 2 {
     ram      attribute colorCapabilities default = 0x0000;
     ram      attribute colorTempPhysicalMinMireds default = 0x0000;
     ram      attribute colorTempPhysicalMaxMireds default = 0xFEFF;
+    ram      attribute coupleColorTempToLevelMinMireds;
+    ram      attribute startUpColorTemperatureMireds;
     callback attribute generatedCommandList;
     callback attribute acceptedCommandList;
     callback attribute eventList;
     callback attribute attributeList;
-    ram      attribute featureMap default = 0;
+    ram      attribute featureMap default = 8;
     ram      attribute clusterRevision default = 7;
+
+    handle command MoveToHue;
+    handle command MoveHue;
+    handle command StepHue;
+    handle command MoveToSaturation;
+    handle command MoveSaturation;
+    handle command StepSaturation;
+    handle command MoveToHueAndSaturation;
+    handle command MoveToColor;
+    handle command MoveColor;
+    handle command StepColor;
+    handle command MoveToColorTemperature;
+    handle command EnhancedMoveToHue;
+    handle command StopMoveStep;
+    handle command MoveColorTemperature;
+    handle command StepColorTemperature;
   }
 
   server cluster OccupancySensing {
