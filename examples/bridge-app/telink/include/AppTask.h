@@ -40,6 +40,14 @@ private:
 
     CHIP_ERROR Init(void);
 
+#if APP_MODULE_USING_UART1
+    static void UartShellRollBackTimerTimeoutCallback(struct k_timer * timer);
+    static void serial_cb(const struct device * dev, void * user_data);
+    static void print_uart(char * buf);
+    static int init_uart_shell(void);
+    static void process_uart_shell(void);
+#endif
+
     static void LightingActionEventHandler(AppEvent * aEvent);
 
     static AppTask sAppTask;
