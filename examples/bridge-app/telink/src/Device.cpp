@@ -117,13 +117,10 @@ void Device::SetCurrentHue(uint8_t aCurrentHue)
     debug_msg("aCurrentHue[%d]\n", aCurrentHue);
     bool changed = false;
 
-    if (aCurrentHue)
-    {
-        debug_msg("\n");
-        changed     = (mCurrentHue != aCurrentHue);
-        mCurrentHue = aCurrentHue;
-        ChipLogProgress(DeviceLayer, "Device[%s]: set CurrentHue [%d]", mName, aCurrentHue);
-    }
+    debug_msg("\n");
+    changed     = (mCurrentHue != aCurrentHue);
+    mCurrentHue = aCurrentHue;
+    ChipLogProgress(DeviceLayer, "Device[%s]: set CurrentHue [%d]", mName, aCurrentHue);
 
     if (changed && mChanged_CB)
     {
@@ -138,18 +135,51 @@ void Device::SetCurrentSaturation(uint8_t aCurrentSaturation)
     debug_msg("aCurrentSaturation[%d]\n", aCurrentSaturation);
     bool changed = false;
 
-    if (aCurrentSaturation)
-    {
-        debug_msg("\n");
-        changed            = (mCurrentSaturation != aCurrentSaturation);
-        mCurrentSaturation = aCurrentSaturation;
-        ChipLogProgress(DeviceLayer, "Device[%s]: set Changed_CurrentSaturation [%d]", mName, aCurrentSaturation);
-    }
+    debug_msg("\n");
+    changed            = (mCurrentSaturation != aCurrentSaturation);
+    mCurrentSaturation = aCurrentSaturation;
+    ChipLogProgress(DeviceLayer, "Device[%s]: set Changed_CurrentSaturation [%d]", mName, aCurrentSaturation);
 
     if (changed && mChanged_CB)
     {
         debug_msg("\n");
         mChanged_CB(this, kChanged_CurrentSaturation);
+        debug_msg("\n");
+    }
+}
+
+void Device::SetColorMode(uint8_t aColorMode)
+{
+    debug_msg("aColorMode[%d]\n", aColorMode);
+    bool changed = false;
+
+    debug_msg("\n");
+    changed    = (mColorMode != aColorMode);
+    mColorMode = aColorMode;
+    ChipLogProgress(DeviceLayer, "Device[%s]: set Changed_ColorMode [%d]", mName, aColorMode);
+
+    if (changed && mChanged_CB)
+    {
+        debug_msg("\n");
+        mChanged_CB(this, kChanged_ColorMode);
+        debug_msg("\n");
+    }
+}
+
+void Device::SetEnhancedColorMode(uint8_t aEnhancedColorMode)
+{
+    debug_msg("aEnhancedColorMode[%d]\n", aEnhancedColorMode);
+    bool changed = false;
+
+    debug_msg("\n");
+    changed            = (mEnhancedColorMode != aEnhancedColorMode);
+    mEnhancedColorMode = aEnhancedColorMode;
+    ChipLogProgress(DeviceLayer, "Device[%s]: set Changed_ColorMode [%d]", mName, aEnhancedColorMode);
+
+    if (changed && mChanged_CB)
+    {
+        debug_msg("\n");
+        mChanged_CB(this, kChanged_EnhancedColorMode);
         debug_msg("\n");
     }
 }
