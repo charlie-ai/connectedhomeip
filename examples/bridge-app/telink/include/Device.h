@@ -38,15 +38,17 @@ public:
 
     enum Changed_t
     {
-        kChanged_Reachable         = 0x01,
-        kChanged_State             = 0x02,
-        kChanged_Location          = 0x04,
-        kChanged_Name              = 0x08,
-        kChanged_CurrentLevel      = 0x10,
-        kChanged_DefaultMoveRate   = 0x20,
-        kChanged_CurrentHue        = 0x40,
-        kChanged_CurrentSaturation = 0x80,
-        kChanged_Last              = kChanged_CurrentSaturation,
+        kChanged_Reachable         = 0x0001,
+        kChanged_State             = 0x0002,
+        kChanged_Location          = 0x0004,
+        kChanged_Name              = 0x0008,
+        kChanged_CurrentLevel      = 0x0010,
+        kChanged_DefaultMoveRate   = 0x0020,
+        kChanged_CurrentHue        = 0x0040,
+        kChanged_CurrentSaturation = 0x0080,
+        kChanged_ColorMode         = 0x0100,
+        kChanged_EnhancedColorMode = 0x0200,
+        kChanged_Last              = kChanged_EnhancedColorMode,
     } Changed;
 
     Device(const char * szDeviceName, const char * szLocation);
@@ -66,6 +68,12 @@ public:
 
     void SetCurrentSaturation(uint8_t aCurrentSaturation);
     inline uint8_t GetCurrentSaturation() { return mCurrentSaturation; };
+
+    void SetColorMode(uint8_t aColorMode);
+    inline uint8_t GetColorMode() { return mColorMode; };
+
+    void SetEnhancedColorMode(uint8_t aEnhancedColorMode);
+    inline uint8_t GetEnhancedColorMode() { return mEnhancedColorMode; };
 
     void SetReachable(bool aReachable);
     void SetName(const char * szDeviceName);
@@ -89,6 +97,8 @@ private:
     uint8_t mDefaultMoveRate;
     uint8_t mCurrentHue;
     uint8_t mCurrentSaturation;
+    uint8_t mColorMode;
+    uint8_t mEnhancedColorMode;
 };
 
 class DeviceTempSensor : public Device

@@ -700,7 +700,7 @@ Protocols::InteractionModel::Status HandleReadColorControlAttribute(Device * dev
     }
     else if ((attributeId == ColorMode::Id) /* && (maxReadLength == 1)*/)
     {
-        uint16_t colorMode = 0x01;
+        uint8_t colorMode = dev->GetColorMode();
         debug_msg("ColorMode::Id=[%u]\n", colorMode);
         memcpy(buffer, &colorMode, sizeof(colorMode));
         debug_msg("*buffer=[%d]\n", *buffer);
@@ -728,7 +728,7 @@ Protocols::InteractionModel::Status HandleReadColorControlAttribute(Device * dev
     }
     else if ((attributeId == EnhancedColorMode::Id) /* && (maxReadLength == 1)*/)
     {
-        uint16_t enhancedColorMode = 0x01;
+        uint8_t enhancedColorMode = dev->GetEnhancedColorMode();
         debug_msg("EnhancedColorMode::Id=[%u]\n", enhancedColorMode);
         memcpy(buffer, &enhancedColorMode, sizeof(enhancedColorMode));
         debug_msg("*buffer=[%d]\n", *buffer);
@@ -831,6 +831,26 @@ Protocols::InteractionModel::Status HandleWriteColorControlAttribute(Device * de
 
             uint8_t aCurrentSaturation = *buffer;
             send_cmd(endpoint, clusterId, attributeId, &aCurrentSaturation, 1);
+
+            return Protocols::InteractionModel::Status::Success;
+        }
+        else if (attributeId == ColorMode::Id)
+        {
+            debug_msg("ColorMode\n");
+            dev->SetColorMode(*buffer);
+
+            // uint8_t aColorMode = *buffer;
+            // send_cmd(endpoint, clusterId, attributeId, &aColorMode, 1);
+
+            return Protocols::InteractionModel::Status::Success;
+        }
+        else if (attributeId == EnhancedColorMode::Id)
+        {
+            debug_msg("EnhancedColorMode\n");
+            dev->SetEnhancedColorMode(*buffer);
+
+            // uint8_t aEnhancedColorMode = *buffer;
+            // send_cmd(endpoint, clusterId, attributeId, &aEnhancedColorMode, 1);
 
             return Protocols::InteractionModel::Status::Success;
         }
@@ -1336,6 +1356,30 @@ void AppTask::InitServer(intptr_t context)
             ChipLogProgress(DeviceLayer, "==add by clz:init_level value is %d in endpoint %d ", sLevel, light_endpiont);
 
             dev_init->SetLevel(sLevel);
+        }
+
+        chip::app::Clusters::ColorControl::ColorModeEnum sColorMode =
+            chip::app::Clusters::ColorControl::ColorModeEnum::kCurrentHueAndCurrentSaturation;
+        status = Clusters::ColorControl::Attributes::ColorMode::Set(LIGHT1_ENDPIONT, sColorMode);
+        status = Clusters::ColorControl::Attributes::ColorMode::Get(LIGHT1_ENDPIONT, &sColorMode);
+        if (status == Protocols::InteractionModel::Status::Success)
+        {
+            ChipLogProgress(DeviceLayer, "==add by clz:init_level value is %d in endpoint %d ", (uint8_t) sColorMode,
+                            light_endpiont);
+
+            dev_init->SetColorMode((uint8_t) sColorMode);
+        }
+
+        chip::app::Clusters::ColorControl::EnhancedColorModeEnum sEnhancedColorMode =
+            chip::app::Clusters::ColorControl::EnhancedColorModeEnum::kCurrentHueAndCurrentSaturation;
+        status = Clusters::ColorControl::Attributes::EnhancedColorMode::Set(LIGHT1_ENDPIONT, sEnhancedColorMode);
+        status = Clusters::ColorControl::Attributes::EnhancedColorMode::Get(LIGHT1_ENDPIONT, &sEnhancedColorMode);
+        if (status == Protocols::InteractionModel::Status::Success)
+        {
+            ChipLogProgress(DeviceLayer, "==add by clz:init_level value is %d in endpoint %d ", (uint8_t) sEnhancedColorMode,
+                            light_endpiont);
+
+            dev_init->SetColorMode((uint8_t) sEnhancedColorMode);
         }
     }
 }
