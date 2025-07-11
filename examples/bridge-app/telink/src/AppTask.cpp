@@ -303,8 +303,6 @@ const EmberAfDeviceType gRootDeviceTypes[]          = { { DEVICE_TYPE_ROOT_NODE,
 const EmberAfDeviceType gAggregateNodeDeviceTypes[] = { { DEVICE_TYPE_BRIDGE, DEVICE_VERSION_DEFAULT } };
 
 const EmberAfDeviceType gBridgedDimmableLightDeviceTypes[] = { { DEVICE_TYPE_DIMMALBE_LIGHT, DEVICE_VERSION_DEFAULT },
-                                                               { DEVICE_TYPE_LEVEL_CONTROL_LIGHT, DEVICE_VERSION_DEFAULT },
-                                                               { DEVICE_TYPE_COLOR_CONTROL_LIGHT, DEVICE_VERSION_DEFAULT },
                                                                { DEVICE_TYPE_BRIDGED_NODE, DEVICE_VERSION_DEFAULT } };
 
 const EmberAfDeviceType gBridgedTempSensorDeviceTypes[] = { { DEVICE_TYPE_TEMP_SENSOR, DEVICE_VERSION_DEFAULT },
@@ -402,13 +400,45 @@ Protocols::InteractionModel::Status HandleReadBridgedDeviceBasicAttribute(Device
 Protocols::InteractionModel::Status HandleReadOnOffAttribute(Device * dev, chip::AttributeId attributeId, uint8_t * buffer,
                                                              uint16_t maxReadLength)
 {
+    using namespace Clusters::OnOff::Attributes;
     ChipLogProgress(DeviceLayer, "HandleReadOnOffAttribute: attrId=%" PRIu32 ", maxReadLength=%u", attributeId, maxReadLength);
 
-    if ((attributeId == Clusters::OnOff::Attributes::OnOff::Id) && (maxReadLength == 1))
+    if ((attributeId == OnOff::Id) && (maxReadLength == 1))
     {
-        *buffer = dev->IsOn() ? 1 : 0;
+        bool onOff = dev->IsOn() ? 1 : 0;
+        debug_msg("OnOff=[%u]\n", onOff);
+        memcpy(buffer, &onOff, sizeof(onOff));
+        debug_msg("*buffer=[%d]\n", *buffer);
     }
-    else if ((attributeId == Clusters::OnOff::Attributes::ClusterRevision::Id) && (maxReadLength == 4))
+    else if (attributeId == GlobalSceneControl::Id)
+    {
+        bool globalSceneControl = true;
+        debug_msg("GlobalSceneControl=[%u]\n", globalSceneControl);
+        memcpy(buffer, &globalSceneControl, sizeof(globalSceneControl));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if (attributeId == OnTime::Id)
+    {
+        uint16_t onTime = 0x00;
+        debug_msg("OnTime=[%u]\n", onTime);
+        memcpy(buffer, &onTime, sizeof(onTime));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if (attributeId == OffWaitTime::Id)
+    {
+        uint16_t offWaitTime = 0x00;
+        debug_msg("OffWaitTime=[%u]\n", offWaitTime);
+        memcpy(buffer, &offWaitTime, sizeof(offWaitTime));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if (attributeId == StartUpOnOff::Id)
+    {
+        uint8_t startUpOnOff = 0xff;
+        debug_msg("StartUpOnOff=[%u]\n", startUpOnOff);
+        memcpy(buffer, &startUpOnOff, sizeof(startUpOnOff));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
+    else if ((attributeId == ClusterRevision::Id) && (maxReadLength == 4))
     {
         uint16_t clusterRevision = ZCL_ON_OFF_CLUSTER_REVISION;
         memcpy(buffer, &clusterRevision, sizeof(clusterRevision));
@@ -494,6 +524,13 @@ Protocols::InteractionModel::Status HandleReadLevelControlAttribute(Device * dev
         memcpy(buffer, &maxFrequency, sizeof(maxFrequency));
         debug_msg("*buffer=[%d]\n", *buffer);
     }
+    else if ((attributeId == Options::Id) /* && (maxReadLength == 1)*/)
+    {
+        debug_msg("Options\n");
+        uint8_t Options = 0x00;
+        memcpy(buffer, &Options, sizeof(Options));
+        debug_msg("*buffer=[%d]\n", *buffer);
+    }
     else if ((attributeId == OnOffTransitionTime::Id) /* && (maxReadLength == 1)*/)
     {
         debug_msg("OnOffTransitionTime\n");
@@ -527,13 +564,6 @@ Protocols::InteractionModel::Status HandleReadLevelControlAttribute(Device * dev
         debug_msg("StartUpCurrentLevel\n");
         uint8_t StartUpCurrentLevel = 255;
         memcpy(buffer, &StartUpCurrentLevel, sizeof(StartUpCurrentLevel));
-        debug_msg("*buffer=[%d]\n", *buffer);
-    }
-    else if ((attributeId == Options::Id) /* && (maxReadLength == 1)*/)
-    {
-        debug_msg("Options\n");
-        uint8_t Options = 0xff;
-        memcpy(buffer, &Options, sizeof(Options));
         debug_msg("*buffer=[%d]\n", *buffer);
     }
     else if ((attributeId == DefaultMoveRate::Id) /* && (maxReadLength == 1)*/)
@@ -996,6 +1026,7 @@ void AppTask::InitServer(intptr_t context)
                       Span<DataVersion>(gTempSensor1DataVersions), 1);
     */
     emberAfLevelControlClusterServerInitCallback(LIGHT1_ENDPIONT);
+    emberAfColorControlClusterServerInitCallback(LIGHT1_ENDPIONT);
     debug_msg("light1_idx=0x%x\n", LIGHT1_ENDPIONT);
 
     Device * dev_init = gDevices[light1_idx];
