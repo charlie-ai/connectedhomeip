@@ -412,11 +412,13 @@ Protocols::InteractionModel::Status HandleReadBridgedDeviceBasicAttribute(Device
     return Protocols::InteractionModel::Status::Success;
 }
 
-Protocols::InteractionModel::Status HandleReadOnOffAttribute(Device * dev, EndpointId endpoint, chip::AttributeId attributeId,
-                                                             ClusterId clusterId, uint8_t * buffer, uint16_t maxReadLength)
+Protocols::InteractionModel::Status HandleReadOnOffAttribute(Device * dev, EndpointId endpoint, ClusterId clusterId, 
+                                                              chip::AttributeId attributeId, uint8_t * buffer, uint16_t maxReadLength)
 {
     using namespace Clusters::OnOff::Attributes;
     ChipLogProgress(DeviceLayer, "HandleReadOnOffAttribute: attrId=%" PRIu32 ", maxReadLength=%u", attributeId, maxReadLength);
+    ChipLogProgress(DeviceLayer, "DEBUG: attributeId=%" PRIu64 " OnOff::Id=%" PRIu64,
+                (uint64_t)attributeId, (uint64_t)Clusters::OnOff::Attributes::OnOff::Id);
 
     if ((attributeId == OnOff::Id) && (maxReadLength == 1))
     {
