@@ -396,6 +396,82 @@ cluster Identify = 3 {
   command access(invoke: manage) TriggerEffect(TriggerEffectRequest): DefaultSuccess = 64;
 }
 
+/** Attributes and commands for group configuration and manipulation. */
+cluster Groups = 4 {
+  revision 4;
+
+  bitmap Feature : bitmap32 {
+    kGroupNames = 0x1;
+  }
+
+  bitmap NameSupportBitmap : bitmap8 {
+    kGroupNames = 0x80;
+  }
+
+  readonly attribute NameSupportBitmap nameSupport = 0;
+  readonly attribute command_id generatedCommandList[] = 65528;
+  readonly attribute command_id acceptedCommandList[] = 65529;
+  readonly attribute attrib_id attributeList[] = 65531;
+  readonly attribute bitmap32 featureMap = 65532;
+  readonly attribute int16u clusterRevision = 65533;
+
+  request struct AddGroupRequest {
+    group_id groupID = 0;
+    char_string<16> groupName = 1;
+  }
+
+  response struct AddGroupResponse = 0 {
+    enum8 status = 0;
+    group_id groupID = 1;
+  }
+
+  request struct ViewGroupRequest {
+    group_id groupID = 0;
+  }
+
+  response struct ViewGroupResponse = 1 {
+    enum8 status = 0;
+    group_id groupID = 1;
+    char_string<16> groupName = 2;
+  }
+
+  request struct GetGroupMembershipRequest {
+    group_id groupList[] = 0;
+  }
+
+  response struct GetGroupMembershipResponse = 2 {
+    nullable int8u capacity = 0;
+    group_id groupList[] = 1;
+  }
+
+  request struct RemoveGroupRequest {
+    group_id groupID = 0;
+  }
+
+  response struct RemoveGroupResponse = 3 {
+    enum8 status = 0;
+    group_id groupID = 1;
+  }
+
+  request struct AddGroupIfIdentifyingRequest {
+    group_id groupID = 0;
+    char_string<16> groupName = 1;
+  }
+
+  /** The AddGroup command allows a client to add group membership in a particular group for the server endpoint. */
+  fabric command access(invoke: manage) AddGroup(AddGroupRequest): AddGroupResponse = 0;
+  /** The ViewGroup command allows a client to request that the server responds with a ViewGroupResponse command containing the name string for a particular group. */
+  fabric command ViewGroup(ViewGroupRequest): ViewGroupResponse = 1;
+  /** The GetGroupMembership command allows a client to inquire about the group membership of the server endpoint, in a number of ways. */
+  fabric command GetGroupMembership(GetGroupMembershipRequest): GetGroupMembershipResponse = 2;
+  /** The RemoveGroup command allows a client to request that the server removes the membership for the server endpoint, if any, in a particular group. */
+  fabric command access(invoke: manage) RemoveGroup(RemoveGroupRequest): RemoveGroupResponse = 3;
+  /** The RemoveAllGroups command allows a client to direct the server to remove all group associations for the server endpoint. */
+  fabric command access(invoke: manage) RemoveAllGroups(): DefaultSuccess = 4;
+  /** The AddGroupIfIdentifying command allows a client to add group membership in a particular group for the server endpoint, on condition that the endpoint is identifying itself. */
+  fabric command access(invoke: manage) AddGroupIfIdentifying(AddGroupIfIdentifyingRequest): DefaultSuccess = 5;
+}
+
 /** Attributes and commands for switching devices between 'On' and 'Off' states. */
 cluster OnOff = 6 {
   revision 6;
@@ -1598,173 +1674,6 @@ cluster SoftwareDiagnostics = 52 {
   command access(invoke: manage) ResetWatermarks(): DefaultSuccess = 0;
 }
 
-/** The Thread Network Diagnostics Cluster provides a means to acquire standardized diagnostics metrics that MAY be used by a Node to assist a user or Administrative Node in diagnosing potential problems */
-cluster ThreadNetworkDiagnostics = 53 {
-  revision 3;
-
-  enum ConnectionStatusEnum : enum8 {
-    kConnected = 0;
-    kNotConnected = 1;
-  }
-
-  enum NetworkFaultEnum : enum8 {
-    kUnspecified = 0;
-    kLinkDown = 1;
-    kHardwareFailure = 2;
-    kNetworkJammed = 3;
-  }
-
-  enum RoutingRoleEnum : enum8 {
-    kUnspecified = 0;
-    kUnassigned = 1;
-    kSleepyEndDevice = 2;
-    kEndDevice = 3;
-    kREED = 4 [spec_name = "REED"];
-    kRouter = 5;
-    kLeader = 6;
-  }
-
-  bitmap Feature : bitmap32 {
-    kPacketCounts = 0x1;
-    kErrorCounts = 0x2;
-    kMLECounts = 0x4;
-    kMACCounts = 0x8;
-  }
-
-  struct NeighborTableStruct {
-    int64u extAddress = 0;
-    int32u age = 1;
-    int16u rloc16 = 2;
-    int32u linkFrameCounter = 3;
-    int32u mleFrameCounter = 4;
-    int8u lqi = 5;
-    nullable int8s averageRssi = 6;
-    nullable int8s lastRssi = 7;
-    int8u frameErrorRate = 8;
-    int8u messageErrorRate = 9;
-    boolean rxOnWhenIdle = 10;
-    boolean fullThreadDevice = 11;
-    boolean fullNetworkData = 12;
-    boolean isChild = 13;
-  }
-
-  struct OperationalDatasetComponents {
-    boolean activeTimestampPresent = 0;
-    boolean pendingTimestampPresent = 1;
-    boolean masterKeyPresent = 2;
-    boolean networkNamePresent = 3;
-    boolean extendedPanIdPresent = 4;
-    boolean meshLocalPrefixPresent = 5;
-    boolean delayPresent = 6;
-    boolean panIdPresent = 7;
-    boolean channelPresent = 8;
-    boolean pskcPresent = 9;
-    boolean securityPolicyPresent = 10;
-    boolean channelMaskPresent = 11;
-  }
-
-  struct RouteTableStruct {
-    int64u extAddress = 0;
-    int16u rloc16 = 1;
-    int8u routerId = 2;
-    int8u nextHop = 3;
-    int8u pathCost = 4;
-    int8u LQIIn = 5;
-    int8u LQIOut = 6;
-    int8u age = 7;
-    boolean allocated = 8;
-    boolean linkEstablished = 9;
-  }
-
-  struct SecurityPolicy {
-    int16u rotationTime = 0;
-    int16u flags = 1;
-  }
-
-  info event ConnectionStatus = 0 {
-    ConnectionStatusEnum connectionStatus = 0;
-  }
-
-  info event NetworkFaultChange = 1 {
-    NetworkFaultEnum current[] = 0;
-    NetworkFaultEnum previous[] = 1;
-  }
-
-  readonly attribute nullable int16u channel = 0;
-  readonly attribute nullable RoutingRoleEnum routingRole = 1;
-  readonly attribute nullable char_string<16> networkName = 2;
-  readonly attribute nullable int16u panId = 3;
-  readonly attribute nullable int64u extendedPanId = 4;
-  readonly attribute nullable octet_string<17> meshLocalPrefix = 5;
-  readonly attribute optional int64u overrunCount = 6;
-  readonly attribute NeighborTableStruct neighborTable[] = 7;
-  readonly attribute RouteTableStruct routeTable[] = 8;
-  readonly attribute nullable int32u partitionId = 9;
-  readonly attribute nullable int16u weighting = 10;
-  readonly attribute nullable int16u dataVersion = 11;
-  readonly attribute nullable int16u stableDataVersion = 12;
-  readonly attribute nullable int8u leaderRouterId = 13;
-  readonly attribute optional int16u detachedRoleCount = 14;
-  readonly attribute optional int16u childRoleCount = 15;
-  readonly attribute optional int16u routerRoleCount = 16;
-  readonly attribute optional int16u leaderRoleCount = 17;
-  readonly attribute optional int16u attachAttemptCount = 18;
-  readonly attribute optional int16u partitionIdChangeCount = 19;
-  readonly attribute optional int16u betterPartitionAttachAttemptCount = 20;
-  readonly attribute optional int16u parentChangeCount = 21;
-  readonly attribute optional int32u txTotalCount = 22;
-  readonly attribute optional int32u txUnicastCount = 23;
-  readonly attribute optional int32u txBroadcastCount = 24;
-  readonly attribute optional int32u txAckRequestedCount = 25;
-  readonly attribute optional int32u txAckedCount = 26;
-  readonly attribute optional int32u txNoAckRequestedCount = 27;
-  readonly attribute optional int32u txDataCount = 28;
-  readonly attribute optional int32u txDataPollCount = 29;
-  readonly attribute optional int32u txBeaconCount = 30;
-  readonly attribute optional int32u txBeaconRequestCount = 31;
-  readonly attribute optional int32u txOtherCount = 32;
-  readonly attribute optional int32u txRetryCount = 33;
-  readonly attribute optional int32u txDirectMaxRetryExpiryCount = 34;
-  readonly attribute optional int32u txIndirectMaxRetryExpiryCount = 35;
-  readonly attribute optional int32u txErrCcaCount = 36;
-  readonly attribute optional int32u txErrAbortCount = 37;
-  readonly attribute optional int32u txErrBusyChannelCount = 38;
-  readonly attribute optional int32u rxTotalCount = 39;
-  readonly attribute optional int32u rxUnicastCount = 40;
-  readonly attribute optional int32u rxBroadcastCount = 41;
-  readonly attribute optional int32u rxDataCount = 42;
-  readonly attribute optional int32u rxDataPollCount = 43;
-  readonly attribute optional int32u rxBeaconCount = 44;
-  readonly attribute optional int32u rxBeaconRequestCount = 45;
-  readonly attribute optional int32u rxOtherCount = 46;
-  readonly attribute optional int32u rxAddressFilteredCount = 47;
-  readonly attribute optional int32u rxDestAddrFilteredCount = 48;
-  readonly attribute optional int32u rxDuplicatedCount = 49;
-  readonly attribute optional int32u rxErrNoFrameCount = 50;
-  readonly attribute optional int32u rxErrUnknownNeighborCount = 51;
-  readonly attribute optional int32u rxErrInvalidSrcAddrCount = 52;
-  readonly attribute optional int32u rxErrSecCount = 53;
-  readonly attribute optional int32u rxErrFcsCount = 54;
-  readonly attribute optional int32u rxErrOtherCount = 55;
-  readonly attribute optional nullable int64u activeTimestamp = 56;
-  readonly attribute optional nullable int64u pendingTimestamp = 57;
-  readonly attribute optional nullable int32u delay = 58;
-  readonly attribute nullable SecurityPolicy securityPolicy = 59;
-  readonly attribute nullable octet_string<4> channelPage0Mask = 60;
-  readonly attribute nullable OperationalDatasetComponents operationalDatasetComponents = 61;
-  readonly attribute NetworkFaultEnum activeNetworkFaultsList[] = 62;
-  provisional readonly attribute nullable int64u extAddress = 63;
-  provisional readonly attribute nullable int16u rloc16 = 64;
-  readonly attribute command_id generatedCommandList[] = 65528;
-  readonly attribute command_id acceptedCommandList[] = 65529;
-  readonly attribute attrib_id attributeList[] = 65531;
-  readonly attribute bitmap32 featureMap = 65532;
-  readonly attribute int16u clusterRevision = 65533;
-
-  /** Reception of this command SHALL reset the following attributes to 0: */
-  command access(invoke: manage) ResetCounts(): DefaultSuccess = 0;
-}
-
 /** The Wi-Fi Network Diagnostics Cluster provides a means to acquire standardized diagnostics metrics that MAY be used by a Node to assist a user or Administrative Node in diagnosing potential problems. */
 cluster WiFiNetworkDiagnostics = 54 {
   revision 1;
@@ -2228,19 +2137,485 @@ cluster UserLabel = 65 {
   readonly attribute int16u clusterRevision = 65533;
 }
 
-/** Attributes and commands for configuring the measurement of temperature, and reporting temperature measurements. */
-cluster TemperatureMeasurement = 1026 {
-  revision 4;
+/** Attributes and commands for scene configuration and manipulation. */
+provisional cluster ScenesManagement = 98 {
+  revision 1;
 
-  readonly attribute nullable temperature measuredValue = 0;
-  readonly attribute nullable temperature minMeasuredValue = 1;
-  readonly attribute nullable temperature maxMeasuredValue = 2;
-  readonly attribute optional int16u tolerance = 3;
+  bitmap CopyModeBitmap : bitmap8 {
+    kCopyAllScenes = 0x1;
+  }
+
+  bitmap Feature : bitmap32 {
+    kSceneNames = 0x1;
+  }
+
+  struct AttributeValuePairStruct {
+    attrib_id attributeID = 0;
+    optional int8u valueUnsigned8 = 1;
+    optional int8s valueSigned8 = 2;
+    optional int16u valueUnsigned16 = 3;
+    optional int16s valueSigned16 = 4;
+    optional int32u valueUnsigned32 = 5;
+    optional int32s valueSigned32 = 6;
+    optional int64u valueUnsigned64 = 7;
+    optional int64s valueSigned64 = 8;
+  }
+
+  struct ExtensionFieldSetStruct {
+    cluster_id clusterID = 0;
+    AttributeValuePairStruct attributeValueList[] = 1;
+  }
+
+  fabric_scoped struct SceneInfoStruct {
+    int8u sceneCount = 0;
+    fabric_sensitive int8u currentScene = 1;
+    fabric_sensitive group_id currentGroup = 2;
+    fabric_sensitive boolean sceneValid = 3;
+    int8u remainingCapacity = 4;
+    fabric_idx fabricIndex = 254;
+  }
+
+  readonly attribute int16u sceneTableSize = 1;
+  readonly attribute SceneInfoStruct fabricSceneInfo[] = 2;
   readonly attribute command_id generatedCommandList[] = 65528;
   readonly attribute command_id acceptedCommandList[] = 65529;
   readonly attribute attrib_id attributeList[] = 65531;
   readonly attribute bitmap32 featureMap = 65532;
   readonly attribute int16u clusterRevision = 65533;
+
+  request struct AddSceneRequest {
+    group_id groupID = 0;
+    int8u sceneID = 1;
+    int32u transitionTime = 2;
+    char_string<16> sceneName = 3;
+    ExtensionFieldSetStruct extensionFieldSetStructs[] = 4;
+  }
+
+  response struct AddSceneResponse = 0 {
+    status status = 0;
+    group_id groupID = 1;
+    int8u sceneID = 2;
+  }
+
+  request struct ViewSceneRequest {
+    group_id groupID = 0;
+    int8u sceneID = 1;
+  }
+
+  response struct ViewSceneResponse = 1 {
+    status status = 0;
+    group_id groupID = 1;
+    int8u sceneID = 2;
+    optional int32u transitionTime = 3;
+    optional char_string<16> sceneName = 4;
+    optional ExtensionFieldSetStruct extensionFieldSetStructs[] = 5;
+  }
+
+  request struct RemoveSceneRequest {
+    group_id groupID = 0;
+    int8u sceneID = 1;
+  }
+
+  response struct RemoveSceneResponse = 2 {
+    status status = 0;
+    group_id groupID = 1;
+    int8u sceneID = 2;
+  }
+
+  request struct RemoveAllScenesRequest {
+    group_id groupID = 0;
+  }
+
+  response struct RemoveAllScenesResponse = 3 {
+    status status = 0;
+    group_id groupID = 1;
+  }
+
+  request struct StoreSceneRequest {
+    group_id groupID = 0;
+    int8u sceneID = 1;
+  }
+
+  response struct StoreSceneResponse = 4 {
+    status status = 0;
+    group_id groupID = 1;
+    int8u sceneID = 2;
+  }
+
+  request struct RecallSceneRequest {
+    group_id groupID = 0;
+    int8u sceneID = 1;
+    optional nullable int32u transitionTime = 2;
+  }
+
+  request struct GetSceneMembershipRequest {
+    group_id groupID = 0;
+  }
+
+  response struct GetSceneMembershipResponse = 6 {
+    status status = 0;
+    nullable int8u capacity = 1;
+    group_id groupID = 2;
+    optional int8u sceneList[] = 3;
+  }
+
+  request struct CopySceneRequest {
+    CopyModeBitmap mode = 0;
+    group_id groupIdentifierFrom = 1;
+    int8u sceneIdentifierFrom = 2;
+    group_id groupIdentifierTo = 3;
+    int8u sceneIdentifierTo = 4;
+  }
+
+  response struct CopySceneResponse = 64 {
+    status status = 0;
+    group_id groupIdentifierFrom = 1;
+    int8u sceneIdentifierFrom = 2;
+  }
+
+  /** Add a scene to the scene table. Extension field sets are input as '{"ClusterID": VALUE, "AttributeValueList":[{"AttributeID": VALUE, "Value*": VALUE}]}'. */
+  fabric command access(invoke: manage) AddScene(AddSceneRequest): AddSceneResponse = 0;
+  /** Retrieves the requested scene entry from its Scene table. */
+  fabric command ViewScene(ViewSceneRequest): ViewSceneResponse = 1;
+  /** Removes the requested scene entry, corresponding to the value of the GroupID field, from its Scene Table */
+  fabric command access(invoke: manage) RemoveScene(RemoveSceneRequest): RemoveSceneResponse = 2;
+  /** Remove all scenes, corresponding to the value of the GroupID field, from its Scene Table */
+  fabric command access(invoke: manage) RemoveAllScenes(RemoveAllScenesRequest): RemoveAllScenesResponse = 3;
+  /** Adds the scene entry into its Scene Table along with all extension field sets corresponding to the current state of other clusters on the same endpoint */
+  fabric command access(invoke: manage) StoreScene(StoreSceneRequest): StoreSceneResponse = 4;
+  /** Set the attributes and corresponding state for each other cluster implemented on the endpoint accordingly to the resquested scene entry in the Scene Table */
+  fabric command RecallScene(RecallSceneRequest): DefaultSuccess = 5;
+  /** This command can be used to get the used scene identifiers within a certain group, for the endpoint that implements this cluster. */
+  fabric command GetSceneMembership(GetSceneMembershipRequest): GetSceneMembershipResponse = 6;
+  /** This command allows a client to efficiently copy scenes from one group/scene identifier pair to another group/scene identifier pair. */
+  fabric command access(invoke: manage) CopyScene(CopySceneRequest): CopySceneResponse = 64;
+}
+
+/** Attributes and commands for controlling the color properties of a color-capable light. */
+cluster ColorControl = 768 {
+  revision 7;
+
+  enum ColorLoopActionEnum : enum8 {
+    kDeactivate = 0;
+    kActivateFromColorLoopStartEnhancedHue = 1;
+    kActivateFromEnhancedCurrentHue = 2;
+  }
+
+  enum ColorLoopDirectionEnum : enum8 {
+    kDecrement = 0;
+    kIncrement = 1;
+  }
+
+  enum ColorModeEnum : enum8 {
+    kCurrentHueAndCurrentSaturation = 0;
+    kCurrentXAndCurrentY = 1;
+    kColorTemperatureMireds = 2;
+  }
+
+  enum DirectionEnum : enum8 {
+    kShortest = 0;
+    kLongest = 1;
+    kUp = 2;
+    kDown = 3;
+  }
+
+  enum DriftCompensationEnum : enum8 {
+    kNone = 0;
+    kOtherOrUnknown = 1;
+    kTemperatureMonitoring = 2;
+    kOpticalLuminanceMonitoringAndFeedback = 3;
+    kOpticalColorMonitoringAndFeedback = 4;
+  }
+
+  enum EnhancedColorModeEnum : enum8 {
+    kCurrentHueAndCurrentSaturation = 0;
+    kCurrentXAndCurrentY = 1;
+    kColorTemperatureMireds = 2;
+    kEnhancedCurrentHueAndCurrentSaturation = 3;
+  }
+
+  enum MoveModeEnum : enum8 {
+    kStop = 0;
+    kUp = 1;
+    kDown = 3;
+  }
+
+  enum StepModeEnum : enum8 {
+    kUp = 1;
+    kDown = 3;
+  }
+
+  bitmap ColorCapabilitiesBitmap : bitmap16 {
+    kHueSaturation = 0x1;
+    kEnhancedHue = 0x2;
+    kColorLoop = 0x4;
+    kXY = 0x8 [spec_name = "XY"];
+    kColorTemperature = 0x10;
+  }
+
+  bitmap Feature : bitmap32 {
+    kHueAndSaturation = 0x1;
+    kEnhancedHue = 0x2;
+    kColorLoop = 0x4;
+    kXY = 0x8 [spec_name = "XY"];
+    kColorTemperature = 0x10;
+  }
+
+  bitmap OptionsBitmap : bitmap8 {
+    kExecuteIfOff = 0x1;
+  }
+
+  bitmap UpdateFlagsBitmap : bitmap8 {
+    kUpdateAction = 0x1;
+    kUpdateDirection = 0x2;
+    kUpdateTime = 0x4;
+    kUpdateStartHue = 0x8;
+  }
+
+  readonly attribute optional int8u currentHue = 0;
+  readonly attribute optional int8u currentSaturation = 1;
+  readonly attribute optional int16u remainingTime = 2;
+  readonly attribute optional int16u currentX = 3;
+  readonly attribute optional int16u currentY = 4;
+  readonly attribute optional DriftCompensationEnum driftCompensation = 5;
+  readonly attribute optional char_string<254> compensationText = 6;
+  readonly attribute optional int16u colorTemperatureMireds = 7;
+  readonly attribute ColorModeEnum colorMode = 8;
+  attribute OptionsBitmap options = 15;
+  readonly attribute nullable int8u numberOfPrimaries = 16;
+  readonly attribute optional int16u primary1X = 17;
+  readonly attribute optional int16u primary1Y = 18;
+  readonly attribute optional nullable int8u primary1Intensity = 19;
+  readonly attribute optional int16u primary2X = 21;
+  readonly attribute optional int16u primary2Y = 22;
+  readonly attribute optional nullable int8u primary2Intensity = 23;
+  readonly attribute optional int16u primary3X = 25;
+  readonly attribute optional int16u primary3Y = 26;
+  readonly attribute optional nullable int8u primary3Intensity = 27;
+  readonly attribute optional int16u primary4X = 32;
+  readonly attribute optional int16u primary4Y = 33;
+  readonly attribute optional nullable int8u primary4Intensity = 34;
+  readonly attribute optional int16u primary5X = 36;
+  readonly attribute optional int16u primary5Y = 37;
+  readonly attribute optional nullable int8u primary5Intensity = 38;
+  readonly attribute optional int16u primary6X = 40;
+  readonly attribute optional int16u primary6Y = 41;
+  readonly attribute optional nullable int8u primary6Intensity = 42;
+  attribute access(write: manage) optional int16u whitePointX = 48;
+  attribute access(write: manage) optional int16u whitePointY = 49;
+  attribute access(write: manage) optional int16u colorPointRX = 50;
+  attribute access(write: manage) optional int16u colorPointRY = 51;
+  attribute access(write: manage) optional nullable int8u colorPointRIntensity = 52;
+  attribute access(write: manage) optional int16u colorPointGX = 54;
+  attribute access(write: manage) optional int16u colorPointGY = 55;
+  attribute access(write: manage) optional nullable int8u colorPointGIntensity = 56;
+  attribute access(write: manage) optional int16u colorPointBX = 58;
+  attribute access(write: manage) optional int16u colorPointBY = 59;
+  attribute access(write: manage) optional nullable int8u colorPointBIntensity = 60;
+  readonly attribute optional int16u enhancedCurrentHue = 16384;
+  readonly attribute EnhancedColorModeEnum enhancedColorMode = 16385;
+  readonly attribute optional int8u colorLoopActive = 16386;
+  readonly attribute optional int8u colorLoopDirection = 16387;
+  readonly attribute optional int16u colorLoopTime = 16388;
+  readonly attribute optional int16u colorLoopStartEnhancedHue = 16389;
+  readonly attribute optional int16u colorLoopStoredEnhancedHue = 16390;
+  readonly attribute ColorCapabilitiesBitmap colorCapabilities = 16394;
+  readonly attribute optional int16u colorTempPhysicalMinMireds = 16395;
+  readonly attribute optional int16u colorTempPhysicalMaxMireds = 16396;
+  readonly attribute optional int16u coupleColorTempToLevelMinMireds = 16397;
+  attribute access(write: manage) optional nullable int16u startUpColorTemperatureMireds = 16400;
+  readonly attribute command_id generatedCommandList[] = 65528;
+  readonly attribute command_id acceptedCommandList[] = 65529;
+  readonly attribute attrib_id attributeList[] = 65531;
+  readonly attribute bitmap32 featureMap = 65532;
+  readonly attribute int16u clusterRevision = 65533;
+
+  request struct MoveToHueRequest {
+    int8u hue = 0;
+    DirectionEnum direction = 1;
+    int16u transitionTime = 2;
+    OptionsBitmap optionsMask = 3;
+    OptionsBitmap optionsOverride = 4;
+  }
+
+  request struct MoveHueRequest {
+    MoveModeEnum moveMode = 0;
+    int8u rate = 1;
+    OptionsBitmap optionsMask = 2;
+    OptionsBitmap optionsOverride = 3;
+  }
+
+  request struct StepHueRequest {
+    StepModeEnum stepMode = 0;
+    int8u stepSize = 1;
+    int8u transitionTime = 2;
+    OptionsBitmap optionsMask = 3;
+    OptionsBitmap optionsOverride = 4;
+  }
+
+  request struct MoveToSaturationRequest {
+    int8u saturation = 0;
+    int16u transitionTime = 1;
+    OptionsBitmap optionsMask = 2;
+    OptionsBitmap optionsOverride = 3;
+  }
+
+  request struct MoveSaturationRequest {
+    MoveModeEnum moveMode = 0;
+    int8u rate = 1;
+    OptionsBitmap optionsMask = 2;
+    OptionsBitmap optionsOverride = 3;
+  }
+
+  request struct StepSaturationRequest {
+    StepModeEnum stepMode = 0;
+    int8u stepSize = 1;
+    int8u transitionTime = 2;
+    OptionsBitmap optionsMask = 3;
+    OptionsBitmap optionsOverride = 4;
+  }
+
+  request struct MoveToHueAndSaturationRequest {
+    int8u hue = 0;
+    int8u saturation = 1;
+    int16u transitionTime = 2;
+    OptionsBitmap optionsMask = 3;
+    OptionsBitmap optionsOverride = 4;
+  }
+
+  request struct MoveToColorRequest {
+    int16u colorX = 0;
+    int16u colorY = 1;
+    int16u transitionTime = 2;
+    OptionsBitmap optionsMask = 3;
+    OptionsBitmap optionsOverride = 4;
+  }
+
+  request struct MoveColorRequest {
+    int16s rateX = 0;
+    int16s rateY = 1;
+    OptionsBitmap optionsMask = 2;
+    OptionsBitmap optionsOverride = 3;
+  }
+
+  request struct StepColorRequest {
+    int16s stepX = 0;
+    int16s stepY = 1;
+    int16u transitionTime = 2;
+    OptionsBitmap optionsMask = 3;
+    OptionsBitmap optionsOverride = 4;
+  }
+
+  request struct MoveToColorTemperatureRequest {
+    int16u colorTemperatureMireds = 0;
+    int16u transitionTime = 1;
+    OptionsBitmap optionsMask = 2;
+    OptionsBitmap optionsOverride = 3;
+  }
+
+  request struct EnhancedMoveToHueRequest {
+    int16u enhancedHue = 0;
+    DirectionEnum direction = 1;
+    int16u transitionTime = 2;
+    OptionsBitmap optionsMask = 3;
+    OptionsBitmap optionsOverride = 4;
+  }
+
+  request struct EnhancedMoveHueRequest {
+    MoveModeEnum moveMode = 0;
+    int16u rate = 1;
+    OptionsBitmap optionsMask = 2;
+    OptionsBitmap optionsOverride = 3;
+  }
+
+  request struct EnhancedStepHueRequest {
+    StepModeEnum stepMode = 0;
+    int16u stepSize = 1;
+    int16u transitionTime = 2;
+    OptionsBitmap optionsMask = 3;
+    OptionsBitmap optionsOverride = 4;
+  }
+
+  request struct EnhancedMoveToHueAndSaturationRequest {
+    int16u enhancedHue = 0;
+    int8u saturation = 1;
+    int16u transitionTime = 2;
+    OptionsBitmap optionsMask = 3;
+    OptionsBitmap optionsOverride = 4;
+  }
+
+  request struct ColorLoopSetRequest {
+    UpdateFlagsBitmap updateFlags = 0;
+    ColorLoopActionEnum action = 1;
+    ColorLoopDirectionEnum direction = 2;
+    int16u time = 3;
+    int16u startHue = 4;
+    OptionsBitmap optionsMask = 5;
+    OptionsBitmap optionsOverride = 6;
+  }
+
+  request struct StopMoveStepRequest {
+    OptionsBitmap optionsMask = 0;
+    OptionsBitmap optionsOverride = 1;
+  }
+
+  request struct MoveColorTemperatureRequest {
+    MoveModeEnum moveMode = 0;
+    int16u rate = 1;
+    int16u colorTemperatureMinimumMireds = 2;
+    int16u colorTemperatureMaximumMireds = 3;
+    OptionsBitmap optionsMask = 4;
+    OptionsBitmap optionsOverride = 5;
+  }
+
+  request struct StepColorTemperatureRequest {
+    StepModeEnum stepMode = 0;
+    int16u stepSize = 1;
+    int16u transitionTime = 2;
+    int16u colorTemperatureMinimumMireds = 3;
+    int16u colorTemperatureMaximumMireds = 4;
+    OptionsBitmap optionsMask = 5;
+    OptionsBitmap optionsOverride = 6;
+  }
+
+  /** Move to specified hue. */
+  command MoveToHue(MoveToHueRequest): DefaultSuccess = 0;
+  /** Move hue up or down at specified rate. */
+  command MoveHue(MoveHueRequest): DefaultSuccess = 1;
+  /** Step hue up or down by specified size at specified rate. */
+  command StepHue(StepHueRequest): DefaultSuccess = 2;
+  /** Move to specified saturation. */
+  command MoveToSaturation(MoveToSaturationRequest): DefaultSuccess = 3;
+  /** Move saturation up or down at specified rate. */
+  command MoveSaturation(MoveSaturationRequest): DefaultSuccess = 4;
+  /** Step saturation up or down by specified size at specified rate. */
+  command StepSaturation(StepSaturationRequest): DefaultSuccess = 5;
+  /** Move to hue and saturation. */
+  command MoveToHueAndSaturation(MoveToHueAndSaturationRequest): DefaultSuccess = 6;
+  /** Move to specified color. */
+  command MoveToColor(MoveToColorRequest): DefaultSuccess = 7;
+  /** Moves the color. */
+  command MoveColor(MoveColorRequest): DefaultSuccess = 8;
+  /** Steps the lighting to a specific color. */
+  command StepColor(StepColorRequest): DefaultSuccess = 9;
+  /** Move to a specific color temperature. */
+  command MoveToColorTemperature(MoveToColorTemperatureRequest): DefaultSuccess = 10;
+  /** Command description for EnhancedMoveToHue */
+  command EnhancedMoveToHue(EnhancedMoveToHueRequest): DefaultSuccess = 64;
+  /** Command description for EnhancedMoveHue */
+  command EnhancedMoveHue(EnhancedMoveHueRequest): DefaultSuccess = 65;
+  /** Command description for EnhancedStepHue */
+  command EnhancedStepHue(EnhancedStepHueRequest): DefaultSuccess = 66;
+  /** Command description for EnhancedMoveToHueAndSaturation */
+  command EnhancedMoveToHueAndSaturation(EnhancedMoveToHueAndSaturationRequest): DefaultSuccess = 67;
+  /** Command description for ColorLoopSet */
+  command ColorLoopSet(ColorLoopSetRequest): DefaultSuccess = 68;
+  /** Command description for StopMoveStep */
+  command StopMoveStep(StopMoveStepRequest): DefaultSuccess = 71;
+  /** Command description for MoveColorTemperature */
+  command MoveColorTemperature(MoveColorTemperatureRequest): DefaultSuccess = 75;
+  /** Command description for StepColorTemperature */
+  command StepColorTemperature(StepColorTemperatureRequest): DefaultSuccess = 76;
 }
 
 endpoint 0 {
@@ -2386,6 +2761,7 @@ endpoint 0 {
     ram      attribute clusterRevision default = 1;
 
     handle command RetrieveLogsRequest;
+    handle command RetrieveLogsResponse;
   }
 
   server cluster GeneralDiagnostics {
@@ -2415,74 +2791,6 @@ endpoint 0 {
     callback attribute currentHeapHighWatermark;
     callback attribute featureMap;
     callback attribute clusterRevision;
-  }
-
-  server cluster ThreadNetworkDiagnostics {
-    callback attribute channel;
-    callback attribute routingRole;
-    callback attribute networkName;
-    callback attribute panId;
-    callback attribute extendedPanId;
-    callback attribute meshLocalPrefix;
-    callback attribute overrunCount;
-    callback attribute neighborTable;
-    callback attribute routeTable;
-    callback attribute partitionId;
-    callback attribute weighting;
-    callback attribute dataVersion;
-    callback attribute stableDataVersion;
-    callback attribute leaderRouterId;
-    callback attribute detachedRoleCount;
-    callback attribute childRoleCount;
-    callback attribute routerRoleCount;
-    callback attribute leaderRoleCount;
-    callback attribute attachAttemptCount;
-    callback attribute partitionIdChangeCount;
-    callback attribute betterPartitionAttachAttemptCount;
-    callback attribute parentChangeCount;
-    callback attribute txTotalCount;
-    callback attribute txUnicastCount;
-    callback attribute txBroadcastCount;
-    callback attribute txAckRequestedCount;
-    callback attribute txAckedCount;
-    callback attribute txNoAckRequestedCount;
-    callback attribute txDataCount;
-    callback attribute txDataPollCount;
-    callback attribute txBeaconCount;
-    callback attribute txBeaconRequestCount;
-    callback attribute txOtherCount;
-    callback attribute txRetryCount;
-    callback attribute txDirectMaxRetryExpiryCount;
-    callback attribute txIndirectMaxRetryExpiryCount;
-    callback attribute txErrCcaCount;
-    callback attribute txErrAbortCount;
-    callback attribute txErrBusyChannelCount;
-    callback attribute rxTotalCount;
-    callback attribute rxUnicastCount;
-    callback attribute rxBroadcastCount;
-    callback attribute rxDataCount;
-    callback attribute rxDataPollCount;
-    callback attribute rxBeaconCount;
-    callback attribute rxBeaconRequestCount;
-    callback attribute rxOtherCount;
-    callback attribute rxAddressFilteredCount;
-    callback attribute rxDestAddrFilteredCount;
-    callback attribute rxDuplicatedCount;
-    callback attribute rxErrNoFrameCount;
-    callback attribute rxErrUnknownNeighborCount;
-    callback attribute rxErrInvalidSrcAddrCount;
-    callback attribute rxErrSecCount;
-    callback attribute rxErrFcsCount;
-    callback attribute rxErrOtherCount;
-    callback attribute activeTimestamp;
-    callback attribute pendingTimestamp;
-    callback attribute delay;
-    callback attribute securityPolicy;
-    callback attribute channelPage0Mask;
-    callback attribute operationalDatasetComponents;
-    callback attribute activeNetworkFaultsList;
-    ram      attribute featureMap default = 15;
-    ram      attribute clusterRevision default = 2;
   }
 
   server cluster WiFiNetworkDiagnostics {
@@ -2636,23 +2944,65 @@ endpoint 1 {
   }
 }
 endpoint 2 {
-  device type ma_dimmablelight = 257, version 1;
+  device type ma_extendedcolorlight = 269, version 1;
 
+
+  server cluster Identify {
+    ram      attribute identifyTime default = 0x0;
+    ram      attribute identifyType;
+    callback attribute generatedCommandList;
+    callback attribute acceptedCommandList;
+    callback attribute attributeList;
+    ram      attribute featureMap default = 0;
+    ram      attribute clusterRevision default = 5;
+
+    handle command Identify;
+    handle command TriggerEffect;
+  }
+
+  server cluster Groups {
+    ram      attribute nameSupport default = 0x00;
+    callback attribute generatedCommandList;
+    callback attribute acceptedCommandList;
+    callback attribute attributeList;
+    ram      attribute featureMap default = 0;
+    ram      attribute clusterRevision default = 4;
+
+    handle command AddGroup;
+    handle command AddGroupResponse;
+    handle command ViewGroupResponse;
+    handle command ViewGroup;
+    handle command GetGroupMembershipResponse;
+    handle command GetGroupMembership;
+    handle command RemoveGroup;
+    handle command RemoveGroupResponse;
+    handle command RemoveAllGroups;
+    handle command AddGroupIfIdentifying;
+  }
 
   server cluster OnOff {
     ram      attribute onOff default = 0x00;
-    ram      attribute featureMap default = 0;
+    ram      attribute globalSceneControl default = 1;
+    ram      attribute onTime default = 0;
+    ram      attribute offWaitTime default = 0;
+    ram      attribute startUpOnOff;
+    callback attribute generatedCommandList;
+    callback attribute acceptedCommandList;
+    callback attribute attributeList;
+    ram      attribute featureMap default = 1;
     ram      attribute clusterRevision default = 5;
 
     handle command Off;
     handle command On;
     handle command Toggle;
+    handle command OffWithEffect;
+    handle command OnWithRecallGlobalScene;
+    handle command OnWithTimedOff;
   }
 
   server cluster LevelControl {
     persist  attribute currentLevel default = 0xFE;
     ram      attribute remainingTime default = 0x0000;
-    ram      attribute minLevel default = 0x01;
     ram      attribute maxLevel default = 0xFE;
     ram      attribute currentFrequency default = 0x0000;
     ram      attribute minFrequency default = 0x0000;
@@ -2664,6 +3014,9 @@ endpoint 2 {
     ram      attribute offTransitionTime;
     ram      attribute defaultMoveRate;
     persist  attribute startUpCurrentLevel default = 255;
+    callback attribute generatedCommandList;
+    callback attribute acceptedCommandList;
+    callback attribute attributeList;
     ram      attribute featureMap default = 3;
     ram      attribute clusterRevision default = 6;
 
@@ -2682,6 +3035,9 @@ endpoint 2 {
     callback attribute serverList;
     callback attribute clientList;
     callback attribute partsList;
+    callback attribute generatedCommandList;
+    callback attribute acceptedCommandList;
+    callback attribute attributeList;
     callback attribute featureMap;
     callback attribute clusterRevision;
   }
@@ -2694,15 +3050,68 @@ endpoint 2 {
     ram      attribute clusterRevision default = 1;
   }
 
-  server cluster TemperatureMeasurement {
-    callback attribute measuredValue;
-    callback attribute minMeasuredValue default = 0x954D;
-    callback attribute maxMeasuredValue default = 0x7FFF;
+  server cluster ScenesManagement {
+    ram      attribute sceneTableSize default = 16;
+    callback attribute fabricSceneInfo;
     callback attribute generatedCommandList;
     callback attribute acceptedCommandList;
     callback attribute attributeList;
-    callback attribute featureMap default = 0;
-    callback attribute clusterRevision default = 1;
+    ram      attribute featureMap default = 0;
+    ram      attribute clusterRevision default = 1;
+
+    handle command AddScene;
+    handle command AddSceneResponse;
+    handle command ViewSceneResponse;
+    handle command ViewScene;
+    handle command RemoveScene;
+    handle command RemoveSceneResponse;
+    handle command RemoveAllScenes;
+    handle command RemoveAllScenesResponse;
+    handle command StoreSceneResponse;
+    handle command StoreScene;
+    handle command RecallScene;
+    handle command GetSceneMembership;
+    handle command GetSceneMembershipResponse;
+    handle command CopySceneResponse;
+    handle command CopyScene;
+  }
+
+  server cluster ColorControl {
+    ram      attribute currentHue default = 0x00;
+    ram      attribute currentSaturation default = 0x00;
+    ram      attribute remainingTime default = 0x0000;
+    ram      attribute currentX default = 0x616B;
+    ram      attribute currentY default = 0x607D;
+    ram      attribute colorTemperatureMireds default = 0x00FA;
+    ram      attribute colorMode default = 0x01;
+    ram      attribute options default = 0x00;
+    ram      attribute numberOfPrimaries;
+    ram      attribute enhancedColorMode default = 0x01;
+    ram      attribute colorCapabilities default = 0x0000;
+    ram      attribute colorTempPhysicalMinMireds default = 0x0000;
+    ram      attribute colorTempPhysicalMaxMireds default = 0xFEFF;
+    ram      attribute coupleColorTempToLevelMinMireds;
+    ram      attribute startUpColorTemperatureMireds;
+    callback attribute generatedCommandList;
+    callback attribute acceptedCommandList;
+    callback attribute attributeList;
+    ram      attribute featureMap default = 0x19;
+    ram      attribute clusterRevision default = 7;
+
+    handle command MoveToHue;
+    handle command MoveHue;
+    handle command StepHue;
+    handle command MoveToSaturation;
+    handle command MoveSaturation;
+    handle command StepSaturation;
+    handle command MoveToHueAndSaturation;
+    handle command MoveToColor;
+    handle command MoveColor;
+    handle command StepColor;
+    handle command MoveToColorTemperature;
+    handle command StopMoveStep;
+    handle command MoveColorTemperature;
+    handle command StepColorTemperature;
   }
 }
 
