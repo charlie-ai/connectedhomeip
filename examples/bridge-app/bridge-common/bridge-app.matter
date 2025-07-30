@@ -2928,6 +2928,7 @@ endpoint 0 {
     ram      attribute clusterRevision default = 1;
 
     handle command RetrieveLogsRequest;
+    handle command RetrieveLogsResponse;
   }
 
   server cluster GeneralDiagnostics {
@@ -3023,6 +3024,8 @@ endpoint 0 {
     callback attribute channelPage0Mask;
     callback attribute operationalDatasetComponents;
     callback attribute activeNetworkFaultsList;
+    callback attribute extAddress;
+    callback attribute rloc16;
     ram      attribute featureMap default = 15;
     ram      attribute clusterRevision default = 2;
   }
@@ -3206,16 +3209,16 @@ endpoint 2 {
     handle command AddGroupResponse;
     handle command ViewGroupResponse;
     handle command ViewGroup;
-    handle command GetGroupMembership;
     handle command GetGroupMembershipResponse;
-    handle command RemoveGroupResponse;
+    handle command GetGroupMembership;
     handle command RemoveGroup;
+    handle command RemoveGroupResponse;
     handle command RemoveAllGroups;
     handle command AddGroupIfIdentifying;
   }
 
   server cluster OnOff {
-    ram      attribute onOff default = 0;
+    ram      attribute onOff default = 0x00;
     ram      attribute globalSceneControl default = 1;
     ram      attribute onTime default = 0;
     ram      attribute offWaitTime default = 0;
@@ -3224,7 +3227,7 @@ endpoint 2 {
     callback attribute acceptedCommandList;
     callback attribute attributeList;
     ram      attribute featureMap default = 1;
-    ram      attribute clusterRevision default = 6;
+    ram      attribute clusterRevision default = 5;
 
     handle command Off;
     handle command On;
@@ -3235,11 +3238,19 @@ endpoint 2 {
   }
 
   server cluster LevelControl {
-    ram      attribute currentLevel;
+    persist  attribute currentLevel default = 0xFE;
     ram      attribute remainingTime default = 0x0000;
+    ram      attribute maxLevel default = 0xFE;
+    ram      attribute currentFrequency default = 0x0000;
+    ram      attribute minFrequency default = 0x0000;
+    ram      attribute maxFrequency default = 0x0000;
     ram      attribute options default = 0x00;
-    ram      attribute onLevel;
-    ram      attribute startUpCurrentLevel;
+    ram      attribute onOffTransitionTime default = 0x0000;
+    ram      attribute onLevel default = 0xFE;
+    ram      attribute onTransitionTime;
+    ram      attribute offTransitionTime;
+    ram      attribute defaultMoveRate;
+    persist  attribute startUpCurrentLevel default = 255;
     callback attribute generatedCommandList;
     callback attribute acceptedCommandList;
     callback attribute attributeList;
@@ -3268,6 +3279,14 @@ endpoint 2 {
     callback attribute clusterRevision;
   }
 
+  server cluster Switch {
+    ram      attribute numberOfPositions default = 2;
+    ram      attribute currentPosition default = 1;
+    ram      attribute multiPressMax default = 2;
+    ram      attribute featureMap default = 0;
+    ram      attribute clusterRevision default = 1;
+  }
+
   server cluster ScenesManagement {
     ram      attribute sceneTableSize default = 16;
     callback attribute fabricSceneInfo;
@@ -3279,22 +3298,24 @@ endpoint 2 {
 
     handle command AddScene;
     handle command AddSceneResponse;
-    handle command ViewScene;
     handle command ViewSceneResponse;
+    handle command ViewScene;
     handle command RemoveScene;
     handle command RemoveSceneResponse;
     handle command RemoveAllScenes;
     handle command RemoveAllScenesResponse;
-    handle command StoreScene;
     handle command StoreSceneResponse;
+    handle command StoreScene;
     handle command RecallScene;
-    handle command GetSceneMembershipResponse;
     handle command GetSceneMembership;
-    handle command CopyScene;
+    handle command GetSceneMembershipResponse;
     handle command CopySceneResponse;
+    handle command CopyScene;
   }
 
   server cluster ColorControl {
+    ram      attribute currentHue default = 0x00;
+    ram      attribute currentSaturation default = 0x00;
     ram      attribute remainingTime default = 0x0000;
     ram      attribute currentX default = 0x616B;
     ram      attribute currentY default = 0x607D;
@@ -3311,9 +3332,16 @@ endpoint 2 {
     callback attribute generatedCommandList;
     callback attribute acceptedCommandList;
     callback attribute attributeList;
-    ram      attribute featureMap default = 24;
+    ram      attribute featureMap default = 0x19;
     ram      attribute clusterRevision default = 7;
 
+    handle command MoveToHue;
+    handle command MoveHue;
+    handle command StepHue;
+    handle command MoveToSaturation;
+    handle command MoveSaturation;
+    handle command StepSaturation;
+    handle command MoveToHueAndSaturation;
     handle command MoveToColor;
     handle command MoveColor;
     handle command StepColor;
