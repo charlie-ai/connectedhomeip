@@ -19,7 +19,6 @@
 #pragma once
 
 #include "AppTaskCommon.h"
-
 class AppTask : public AppTaskCommon
 {
 public:

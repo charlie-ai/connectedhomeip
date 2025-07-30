@@ -477,8 +477,9 @@ Protocols::InteractionModel::Status HandleWriteOnOffAttribute(Device * dev, Endp
                         Protocols::InteractionModel::Status::Failure);
     dev->SetOnOff(*buffer == 1);
 
-    // uint8_t isTurnedOn = *buffer;
-    // send_cmd(light_endpiont, clusterId, attributeId, &isTurnedOn, 1);
+    uint8_t isTurnedOn = *buffer;
+    ChipLogProgress(DeviceLayer, "HandleWriteOnOffAttribute: isTurnedOn=%" PRIu32, isTurnedOn);
+    send_cmd(endpoint, clusterId, attributeId, &isTurnedOn, 1);
 
     return Protocols::InteractionModel::Status::Success;
 }
@@ -919,6 +920,7 @@ Protocols::InteractionModel::Status emberAfExternalAttributeWriteCallback(Endpoi
         {
             if (clusterId == Clusters::OnOff::Id)
             {
+                debug_msg("HandleWriteOnOffAttribute\n");
                 return HandleWriteOnOffAttribute(dev, endpoint, clusterId, attributeMetadata->attributeId, buffer);
             }
             else if (clusterId == Clusters::LevelControl::Id)
@@ -1125,29 +1127,39 @@ void makeup_cmd(EndpointId endpoint, ClusterId clusterId, AttributeId attribute,
         cmd_buffer_wr_idx = 0;
     }
 
-    // print_uart((char *) cmd_buffer);
+    // debug_msg((char *) cmd_buffer);
 }
 
 void send_all_cmd(void)
 {
     for (int j = 0; j < CMD_BUF_NUM; j++)
     {
-        uint8_t * p_buff = (uint8_t *) &(cmd_buffer[j]);
+        uint8_t *p_buff = (uint8_t *) &(cmd_buffer[j]);
         if (p_buff[0] == 0)
         {
             continue;
         }
-        else
+
+        uint8_t len = p_buff[1];
+        if (len > 2)  // 至少有头和1个数据
         {
-            /*cmd send by uart*/
-            for (int i = 1; i < p_buff[1]; i++)
+            /* 使用 uart_fifo_fill 发送数据（跳过p_buff[0]） */
+            int sent = 0;
+            while (sent < len - 1)
             {
-                uart_poll_out(uart_dev, p_buff[i]);
+                int n = uart_fifo_fill(uart_dev, &p_buff[1 + sent], len - 1 - sent);
+                if (n > 0)
+                {
+                    sent += n;
+                }
+                // 若n==0，FIFO满，可选择等待或退出（这里选择继续轮询）
             }
-            p_buff[0] = 0;
         }
+
+        p_buff[0] = 0;  // 标记已发送
     }
 }
+
 
 void send_cmd(EndpointId endpoint, ClusterId clusterId, AttributeId attribute, uint8_t * cmd, uint8_t cmd_len)
 {
@@ -1197,7 +1209,7 @@ int AppTask::init_uart_shell(void)
         return 0;
     }
     uart_irq_rx_enable(uart_dev);
-
+    uart_irq_tx_enable(uart_dev);
     k_timer_init(&sUartShellRollBackTimer, &UartShellRollBackTimerTimeoutCallback, NULL);
     debug_msg("Uart_Shell_Roll_Back_timer_init\n");
 
@@ -1451,6 +1463,7 @@ void AppTask::LightingActionEventHandler(AppEvent * aEvent)
     }
     else if (aEvent->Type == AppEvent::kEventType_Button)
     {
+        LOG_INF("App button pressed");
         sTurnedOn = !sTurnedOn;
 
         PwmManager::getInstance().setPwm(PwmManager::EAppPwm_Red, sTurnedOn);
@@ -1460,7 +1473,7 @@ void AppTask::LightingActionEventHandler(AppEvent * aEvent)
 
 void AppTask::UpdateClusterState(void)
 {
-    bool isTurnedOn = sTurnedOn;
+    uint8_t isTurnedOn = sTurnedOn;
 
     Device * dev_init = gDevices[light1_idx];
     if (dev_init->IsReachable())
@@ -1474,7 +1487,7 @@ void AppTask::UpdateClusterState(void)
         {
             LOG_ERR("Update OnOff fail: %x", to_underlying(status));
         }
-        /*send_cmd(light_endpiont, Clusters::OnOff::Id, Clusters::OnOff::Attributes::OnOff::Id, &isTurnedOn, 1);*/
+        send_cmd(light_endpiont, Clusters::OnOff::Id, Clusters::OnOff::Attributes::OnOff::Id, &isTurnedOn, 1);
 
         uint8_t setLevel = dev_init->GetLevel();
         status           = Clusters::LevelControl::Attributes::CurrentLevel::Set(light_endpiont, setLevel);
