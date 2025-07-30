@@ -105,6 +105,8 @@ static DeviceTempSensor TempSensor1("TempSensor 1", "Office", minMeasuredValue, 
 // (taken from lo-devices.xml)
 #define DEVICE_TYPE_LO_ON_OFF_LIGHT 0x0100
 #define DEVICE_TYPE_DIMMALBE_LIGHT 0x0101
+#define DEVICE_TYPE_COLOR_TEMPERATURE_LIGHT 0x010C
+#define DEVICE_TYPE_EXTERNED_COLOR_LIGHT 0x010D
 #define DEVICE_TYPE_ROOT_NODE 0x0016
 #define DEVICE_TYPE_BRIDGE 0x000e
 #define DEVICE_TYPE_TEMP_SENSOR 0x0302
@@ -121,7 +123,7 @@ static DeviceTempSensor TempSensor1("TempSensor 1", "Office", minMeasuredValue, 
 #define ZCL_DESCRIPTOR_CLUSTER_REVISION (1u)
 #define ZCL_BRIDGED_DEVICE_BASIC_INFORMATION_CLUSTER_REVISION (2u)
 #define ZCL_FIXED_LABEL_CLUSTER_REVISION (1u)
-#define ZCL_ON_OFF_CLUSTER_REVISION (4u)
+#define ZCL_ON_OFF_CLUSTER_REVISION (5u)
 #define ZCL_LEVEL_CONTROL_CLUSTER_REVISION (6u)
 #define ZCL_COLOR_CONTROL_CLUSTER_REVISION (7u)
 #define ZCL_TEMPERATURE_SENSOR_CLUSTER_REVISION (4u)
@@ -137,6 +139,7 @@ static DeviceTempSensor TempSensor1("TempSensor 1", "Office", minMeasuredValue, 
 // Declare On/Off cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(onOffAttrs)
 DECLARE_DYNAMIC_ATTRIBUTE(Clusters::OnOff::Attributes::OnOff::Id, BOOLEAN, 1, MATTER_ATTRIBUTE_FLAG_WRITABLE), /* on/off */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::OnOff::Attributes::FeatureMap::Id, BITMAP32, 1, 0),
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::OnOff::Attributes::ClusterRevision::Id, INT16U, ZCL_ON_OFF_CLUSTER_REVISION, 0),
     DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
@@ -158,6 +161,7 @@ DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::CurrentLevel::Id, 
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::StartUpCurrentLevel::Id, INT8U, 1, MATTER_ATTRIBUTE_FLAG_WRITABLE),
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::DefaultMoveRate::Id, INT8U, 1,
                               MATTER_ATTRIBUTE_FLAG_WRITABLE), /* DefaultMoveRate */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::FeatureMap::Id, BITMAP32, 1, 0),
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::LevelControl::Attributes::ClusterRevision::Id, INT16U, ZCL_LEVEL_CONTROL_CLUSTER_REVISION,
                               0),
     DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
@@ -177,26 +181,15 @@ DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::CurrentHue::Id, IN
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::Options::Id, INT8U, 1, MATTER_ATTRIBUTE_FLAG_WRITABLE),   /* Options */
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::NumberOfPrimaries::Id, INT8U, 1,
                               MATTER_ATTRIBUTE_FLAG_WRITABLE), /* NumberOfPrimaries */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::EnhancedCurrentHue::Id, INT16U, 1,
-                              MATTER_ATTRIBUTE_FLAG_WRITABLE), /* EnhancedCurrentHue */
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::EnhancedColorMode::Id, INT8U, 1,
                               MATTER_ATTRIBUTE_FLAG_WRITABLE), /* EnhancedColorMode */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorLoopActive::Id, INT8U, 1,
-                              MATTER_ATTRIBUTE_FLAG_WRITABLE), /* ColorLoopActive */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorLoopDirection::Id, INT8U, 1,
-                              MATTER_ATTRIBUTE_FLAG_WRITABLE), /* ColorLoopDirection */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorLoopTime::Id, INT16U, 1,
-                              MATTER_ATTRIBUTE_FLAG_WRITABLE), /* ColorLoopTime */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorLoopStartEnhancedHue::Id, INT16U, 1,
-                              MATTER_ATTRIBUTE_FLAG_WRITABLE), /* ColorLoopStartEnhancedHue */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorLoopStoredEnhancedHue::Id, INT16U, 1,
-                              MATTER_ATTRIBUTE_FLAG_WRITABLE), /* ColorLoopStoredEnhancedHue */
-    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorCapabilities::Id, INT8U, 1,
+     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorCapabilities::Id, INT8U, 1,
                               MATTER_ATTRIBUTE_FLAG_WRITABLE), /* ColorCapabilities */
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorTempPhysicalMinMireds::Id, INT16U, 1,
                               MATTER_ATTRIBUTE_FLAG_WRITABLE), /* ColorTempPhysicalMinMireds */
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ColorTempPhysicalMaxMireds::Id, INT16U, 1,
                               MATTER_ATTRIBUTE_FLAG_WRITABLE), /* ColorTempPhysicalMaxMireds */
+    DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::FeatureMap::Id, BITMAP32, 1, 0),
     DECLARE_DYNAMIC_ATTRIBUTE(Clusters::ColorControl::Attributes::ClusterRevision::Id, INT16U, ZCL_COLOR_CONTROL_CLUSTER_REVISION,
                               MATTER_ATTRIBUTE_FLAG_WRITABLE),
     DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
@@ -318,6 +311,12 @@ const EmberAfDeviceType gAggregateNodeDeviceTypes[] = { { DEVICE_TYPE_BRIDGE, DE
 
 const EmberAfDeviceType gBridgedDimmableLightDeviceTypes[] = { { DEVICE_TYPE_DIMMALBE_LIGHT, DEVICE_VERSION_DEFAULT },
                                                                { DEVICE_TYPE_BRIDGED_NODE, DEVICE_VERSION_DEFAULT } };
+
+const EmberAfDeviceType gBridgedColorTemperatureLightDeviceTypes[] = { { DEVICE_TYPE_COLOR_TEMPERATURE_LIGHT, DEVICE_VERSION_DEFAULT },
+                                                                  { DEVICE_TYPE_BRIDGED_NODE, DEVICE_VERSION_DEFAULT } };
+
+const EmberAfDeviceType gBridgedExternColorLightDeviceTypes[] = { { DEVICE_TYPE_EXTERNED_COLOR_LIGHT, DEVICE_VERSION_DEFAULT },
+                                                                { DEVICE_TYPE_BRIDGED_NODE, DEVICE_VERSION_DEFAULT } };
 
 const EmberAfDeviceType gBridgedTempSensorDeviceTypes[] = { { DEVICE_TYPE_TEMP_SENSOR, DEVICE_VERSION_DEFAULT },
                                                             { DEVICE_TYPE_BRIDGED_NODE, DEVICE_VERSION_DEFAULT } };
@@ -1282,7 +1281,7 @@ void AppTask::InitServer(intptr_t context)
     ChipLogProgress(DeviceLayer, "==add by clz:3:pre_compiled_endpoint_num is %d", pre_compiled_endpoint_num);
 
     // Add lights 1..3 --> will be mapped to ZCL endpoints 3, 4, 5
-    light1_idx = AddDeviceEndpoint(&gLight1, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedDimmableLightDeviceTypes),
+    light1_idx = AddDeviceEndpoint(&gLight1, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedExternColorLightDeviceTypes),
                                    Span<DataVersion>(gLight1DataVersions), 1);
     debug_msg("light1_idx=0x%x\n", light1_idx);
     /*

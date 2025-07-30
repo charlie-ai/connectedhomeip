@@ -4202,7 +4202,7 @@
     },
     {
       "id": 3,
-      "name": "MA-dimmablelight",
+      "name": "MA-extendedcolorlight",
       "deviceTypeRef": {
         "code": 269,
         "profileId": 259,
@@ -6095,7 +6095,7 @@
       "parentEndpointIdentifier": null
     },
     {
-      "endpointTypeName": "MA-dimmablelight",
+      "endpointTypeName": "MA-extendedcolorlight",
       "endpointTypeIndex": 2,
       "profileId": 259,
       "endpointId": 2,
